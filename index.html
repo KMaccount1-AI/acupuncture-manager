@@ -1,0 +1,1157 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover">
+<title>鍼治療院 経営管理</title>
+<meta name="description" content="鍼灸師向け経営管理アプリ。針購入・消費量分析・場所代・利益予測">
+<!-- PWA & iOS -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#7c6af7">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="鍼経営管理">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root{--bg:#0f1117;--bg2:#1a1d26;--bg3:#21253a;--border:#2d3250;--accent:#7c6af7;--accent2:#5eead4;--accent3:#f472b6;--text:#e2e8f0;--text2:#94a3b8;--text3:#64748b;--success:#34d399;--warn:#fbbf24;--danger:#f87171;--r:14px;--sh:0 4px 24px rgba(0,0,0,.4)}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom);-webkit-tap-highlight-color:transparent;-webkit-text-size-adjust:100%}
+header{background:linear-gradient(135deg,#1a1d26,#21253a);border-bottom:1px solid var(--border);padding:0 max(16px,env(safe-area-inset-left));padding-right:max(16px,env(safe-area-inset-right));display:flex;align-items:center;gap:12px;height:56px;position:sticky;top:0;z-index:100;box-shadow:var(--sh);flex-wrap:wrap}
+.logo{font-size:18px;font-weight:700;background:linear-gradient(90deg,var(--accent),var(--accent2));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;white-space:nowrap}
+nav{display:flex;gap:3px;margin-left:auto;flex-wrap:wrap;padding:4px 0}
+.tab-btn{background:none;border:none;color:var(--text2);padding:6px 12px;border-radius:8px;cursor:pointer;font-size:13px;font-family:inherit;transition:all .2s;white-space:nowrap}
+.tab-btn:hover{background:var(--bg3);color:var(--text)}
+.tab-btn.active{background:var(--accent);color:#fff;font-weight:500}
+main{flex:1;padding:20px;padding-left:max(20px,env(safe-area-inset-left));padding-right:max(20px,env(safe-area-inset-right));max-width:1280px;width:100%;margin:0 auto}
+.tab-panel{display:none}.tab-panel.active{display:block;animation:fadeIn .25s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:18px;margin-bottom:18px;box-shadow:var(--sh)}
+.card-title{font-size:14px;font-weight:700;color:var(--text);margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:18px}
+.stat-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:18px;position:relative;overflow:hidden}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.stat-card.income::before{background:var(--success)}.stat-card.expense::before{background:var(--danger)}
+.stat-card.profit::before{background:var(--accent)}.stat-card.patients::before{background:var(--accent2)}
+.stat-label{font-size:11px;color:var(--text2);margin-bottom:6px}
+.stat-value{font-size:26px;font-weight:700;line-height:1}
+.stat-card.income .stat-value{color:var(--success)}.stat-card.expense .stat-value{color:var(--danger)}
+.stat-card.profit .stat-value{color:var(--accent)}.stat-card.patients .stat-value{color:var(--accent2)}
+.stat-sub{font-size:11px;color:var(--text3);margin-top:5px}
+.chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px}
+@media(max-width:768px){.chart-grid{grid-template-columns:1fr}}
+.chart-wrap{position:relative;height:200px}
+.form-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;align-items:flex-end}
+.form-group{display:flex;flex-direction:column;gap:5px;flex:1;min-width:120px}
+label{font-size:12px;color:var(--text2)}
+input,select,textarea{background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:7px 11px;font-size:13px;font-family:inherit;transition:border-color .2s;width:100%}
+input:focus,select:focus{outline:none;border-color:var(--accent)}
+select option{background:var(--bg3)}
+.btn{padding:8px 16px;border-radius:8px;border:none;cursor:pointer;font-size:13px;font-family:inherit;font-weight:500;transition:all .2s;white-space:nowrap}
+.btn-primary{background:var(--accent);color:#fff}.btn-primary:hover{background:#6a58e6;transform:translateY(-1px)}
+.btn-danger{background:transparent;border:1px solid var(--danger);color:var(--danger);padding:4px 9px;font-size:12px}
+.btn-danger:hover{background:var(--danger);color:#fff}
+.btn-ghost{background:transparent;border:1px solid var(--border);color:var(--text2)}.btn-ghost:hover{border-color:var(--accent);color:var(--accent)}
+.btn-sm{padding:4px 9px;font-size:12px}
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;padding:9px 11px;border-bottom:1px solid var(--border);color:var(--text3);font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.05em}
+td{padding:9px 11px;border-bottom:1px solid rgba(45,50,80,.5);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(124,106,247,.05)}
+.badge{display:inline-block;padding:2px 7px;border-radius:20px;font-size:11px;font-weight:500}
+.badge-green{background:rgba(52,211,153,.15);color:var(--success)}
+.badge-red{background:rgba(248,113,113,.15);color:var(--danger)}
+.badge-purple{background:rgba(124,106,247,.15);color:var(--accent)}
+.badge-yellow{background:rgba(251,191,36,.15);color:var(--warn)}
+.badge-cyan{background:rgba(94,234,212,.15);color:var(--accent2)}
+.section-title{font-size:20px;font-weight:700;margin-bottom:18px;display:flex;align-items:center;gap:8px}
+.empty-state{text-align:center;padding:30px;color:var(--text3);font-size:13px}
+.month-sel{display:flex;gap:10px;align-items:center;margin-bottom:18px}
+.month-sel input[type=month]{flex:none;width:auto}
+.needle-usage-list{display:flex;flex-direction:column;gap:7px;margin-bottom:10px}
+.needle-usage-row{display:flex;gap:7px;align-items:center}
+.needle-usage-row select{flex:2}.needle-usage-row input{flex:1}
+.sim-output{background:linear-gradient(135deg,rgba(124,106,247,.1),rgba(94,234,212,.1));border:1px solid var(--border);border-radius:var(--r);padding:20px;margin-top:14px}
+.sim-result-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:14px}
+.sim-result-item{text-align:center}
+.sim-result-label{font-size:11px;color:var(--text2);margin-bottom:5px}
+.sim-result-value{font-size:22px;font-weight:700}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;align-items:center;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:22px;width:90%;max-width:480px;box-shadow:var(--sh)}
+.modal-title{font-size:16px;font-weight:700;margin-bottom:18px}
+.modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:18px}
+.loc-other{display:none;margin-top:8px}
+.loc-other.show{display:block}
+.analysis-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-bottom:18px}
+.analysis-card{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:14px}
+.analysis-card-title{font-size:11px;color:var(--text3);margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em}
+.analysis-main{font-size:22px;font-weight:700;color:var(--text);margin-bottom:4px}
+.analysis-sub{font-size:11px;color:var(--text2)}
+.warn-card{border-color:var(--warn)!important}
+.warn-card .analysis-main{color:var(--warn)}
+.hist-view-btn{background:transparent;border:1px solid var(--border);color:var(--text2)}
+.hist-view-btn:hover{border-color:var(--accent);color:var(--accent)}
+.hist-view-btn.active{background:var(--accent);color:#fff;border-color:var(--accent);font-weight:500}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">🩺 鍼治療院 経営管理</div>
+  <nav>
+    <button class="tab-btn active" data-tab="dashboard">ダッシュボード</button>
+    <button class="tab-btn" data-tab="visits">施術記録</button>
+    <button class="tab-btn" data-tab="patients">患者管理</button>
+    <button class="tab-btn" data-tab="costs">針・費用管理</button>
+    <button class="tab-btn" data-tab="simulator">利益予測</button>
+  </nav>
+</header>
+<main>
+
+<!-- ══ DASHBOARD ══ -->
+<div class="tab-panel active" id="panel-dashboard">
+  <div class="section-title"><span>📊</span>ダッシュボード</div>
+  <div class="month-sel"><label>表示月</label><input type="month" id="dash-month"></div>
+  <div class="stat-grid">
+    <div class="stat-card income"><div class="stat-label">収入</div><div class="stat-value" id="dash-income">¥0</div><div class="stat-sub" id="dash-vcnt">施術 0 件</div></div>
+    <div class="stat-card expense"><div class="stat-label">支出合計</div><div class="stat-value" id="dash-expense">¥0</div><div class="stat-sub" id="dash-ndlcost">針コスト ¥0</div></div>
+    <div class="stat-card profit"><div class="stat-label">利益</div><div class="stat-value" id="dash-profit">¥0</div><div class="stat-sub" id="dash-margin">利益率 0%</div></div>
+    <div class="stat-card patients"><div class="stat-label">累計患者数</div><div class="stat-value" id="dash-patients">0</div><div class="stat-sub">登録患者数</div></div>
+  </div>
+  <div class="chart-grid">
+    <div class="card"><div class="card-title">月次収支（直近6か月）</div><div class="chart-wrap"><canvas id="chart-monthly"></canvas></div></div>
+    <div class="card"><div class="card-title">累計キャッシュ推移</div><div class="chart-wrap"><canvas id="chart-cash"></canvas></div></div>
+  </div>
+  <!-- 針消費分析 -->
+  <div class="card">
+    <div class="card-title">🔹 針 在庫・消費分析</div>
+    <div class="analysis-grid" id="needle-analysis"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">今月の施術一覧</div>
+    <div class="table-wrap"><table><thead><tr><th>日付</th><th>患者</th><th>場所</th><th>使用針</th><th>支払</th></tr></thead><tbody id="dash-visit-list"></tbody></table></div>
+  </div>
+</div>
+
+<!-- ══ VISITS ══ -->
+<div class="tab-panel" id="panel-visits">
+  <div class="section-title"><span>📋</span>施術記録</div>
+  <div class="card">
+    <div class="card-title">施術記録を追加</div>
+    <div class="form-row">
+      <div class="form-group"><label>患者</label><select id="visit-patient"></select></div>
+      <div class="form-group"><label>日付</label><input type="date" id="visit-date"></div>
+      <div class="form-group"><label>支払金額（円）</label><input type="number" id="visit-payment" placeholder="3000" min="0"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>施術場所</label>
+        <select id="visit-location" onchange="toggleLocOther()"></select>
+      </div>
+    </div>
+    <div class="loc-other" id="loc-other-wrap">
+      <div class="form-group"><label>場所（自由入力）</label><input type="text" id="visit-location-other" placeholder="場所名を入力"></div>
+    </div>
+    <div class="card-title" style="font-size:13px;margin-bottom:7px">使用針</div>
+    <div class="needle-usage-list" id="needle-usage-list"></div>
+    <button class="btn btn-ghost btn-sm" id="add-needle-row">＋ 針を追加</button>
+    <div class="form-row" style="margin-top:10px">
+      <div class="form-group"><label>メモ</label><input type="text" id="visit-note" placeholder="施術内容など"></div>
+    </div>
+    <button class="btn btn-primary" id="save-visit">記録を保存</button>
+  </div>
+  <div class="card">
+    <div class="card-title">施術履歴</div>
+    <div class="month-sel"><label>月フィルター</label><input type="month" id="visits-month"></div>
+    <div class="table-wrap"><table><thead><tr><th>日付</th><th>患者</th><th>場所</th><th>針（本）</th><th>針コスト</th><th>場所代</th><th>支払</th><th>メモ</th><th></th></tr></thead><tbody id="visit-list"></tbody></table></div>
+  </div>
+</div>
+
+<!-- ══ PATIENTS ══ -->
+<div class="tab-panel" id="panel-patients">
+  <div class="section-title"><span>👤</span>患者管理</div>
+  <div class="card">
+    <div class="card-title">患者を追加</div>
+    <div class="form-row">
+      <div class="form-group"><label>氏名</label><input type="text" id="patient-name" placeholder="田中太郎"></div>
+      <div class="form-group"><label>メモ</label><input type="text" id="patient-note" placeholder="主訴・初診日など"></div>
+      <div style="display:flex;align-items:flex-end"><button class="btn btn-primary" id="save-patient">追加</button></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">患者一覧</div>
+    <div class="table-wrap"><table><thead><tr><th>#</th><th>氏名</th><th>施術回数</th><th>累計支払</th><th>メモ</th><th></th></tr></thead><tbody id="patient-list"></tbody></table></div>
+  </div>
+</div>
+
+<!-- ══ COSTS ══ -->
+<div class="tab-panel" id="panel-costs">
+  <div class="section-title"><span>💰</span>針・費用管理</div>
+
+  <!-- 針種別マスタ -->
+  <div class="card">
+    <div class="card-title">🔹 針種別マスタ</div>
+    <div class="table-wrap"><table><thead><tr><th>名称</th><th>現在単価（/本）</th><th>在庫（本）</th><th>価格履歴</th><th></th></tr></thead><tbody id="needle-list"></tbody></table></div>
+  </div>
+
+  <!-- 針購入記録 -->
+  <div class="card">
+    <div class="card-title">📦 針 購入記録</div>
+    <div class="form-row">
+      <div class="form-group"><label>針名称（新規 or 選択）</label><input type="text" id="purch-needle-name" list="purch-needle-datalist" placeholder="銀製60mm"><datalist id="purch-needle-datalist"></datalist></div>
+      <div class="form-group"><label>本数/パック</label><input type="number" id="purch-qty-pkg" placeholder="100" min="1"></div>
+      <div class="form-group"><label>購入パック数</label><input type="number" id="purch-total-pkg" placeholder="2" min="1" value="1"></div>
+      <div class="form-group"><label>価格（円/パック）</label><input type="number" id="purch-price-pkg" placeholder="800" min="0"></div>
+      <div class="form-group"><label>購入日</label><input type="date" id="purch-date"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>メモ</label><input type="text" id="purch-note" placeholder="仕入先など"></div>
+      <div style="display:flex;align-items:flex-end"><button class="btn btn-primary" id="save-purchase">購入を登録</button></div>
+    </div>
+    <div style="margin-top:8px;padding:10px;background:var(--bg3);border-radius:8px;font-size:12px;color:var(--text2)" id="purch-preview">本単価: —</div>
+    <div style="margin-top:14px">
+      <div class="card-title" style="font-size:13px">購入履歴</div>
+      <div class="table-wrap"><table><thead><tr><th>日付</th><th>針名称</th><th>本数/pkg</th><th>购入pkg数</th><th>価格/pkg</th><th>本単価</th><th>合計本数</th><th>メモ</th><th></th></tr></thead><tbody id="purchase-list"></tbody></table></div>
+    </div>
+  </div>
+
+  <!-- 場所マスタ -->
+  <div class="card">
+    <div class="card-title">📍 場所マスタ</div>
+    <div class="form-row">
+      <div class="form-group"><label>場所名</label><input type="text" id="loc-name" placeholder="新宿クリニック"></div>
+      <div class="form-group"><label>場所代（円/施術）</label><input type="number" id="loc-fee" placeholder="3000" min="0"></div>
+      <div style="display:flex;align-items:flex-end"><button class="btn btn-primary" id="save-location">追加</button></div>
+    </div>
+    <div class="table-wrap"><table><thead><tr><th>場所名</th><th>場所代/施術</th><th></th></tr></thead><tbody id="location-list"></tbody></table></div>
+  </div>
+
+  <!-- 固定費 -->
+  <div class="card">
+    <div class="card-title">📌 固定費</div>
+    <div class="form-row">
+      <div class="form-group"><label>費目名</label><input type="text" id="fixed-name" placeholder="施術室レンタル"></div>
+      <div class="form-group"><label>金額（円）</label><input type="number" id="fixed-amount" placeholder="50000" min="0"></div>
+      <div class="form-group"><label>種別</label><select id="fixed-type"><option value="monthly">月額</option><option value="perVisit">1施術あたり</option></select></div>
+      <div style="display:flex;align-items:flex-end"><button class="btn btn-primary" id="save-fixed">追加</button></div>
+    </div>
+    <div class="table-wrap"><table><thead><tr><th>費目名</th><th>金額</th><th>種別</th><th></th></tr></thead><tbody id="fixed-list"></tbody></table></div>
+  </div>
+
+  <!-- 半変動費 -->
+  <div class="card">
+    <div class="card-title">📎 半変動費</div>
+    <div class="form-row">
+      <div class="form-group"><label>費目名</label><input type="text" id="semi-name" placeholder="消耗品"></div>
+      <div class="form-group"><label>患者1人あたり（円）</label><input type="number" id="semi-per-patient" placeholder="100" min="0"></div>
+      <div class="form-group"><label>針1本あたり（円）</label><input type="number" id="semi-per-needle" placeholder="5" min="0"></div>
+      <div style="display:flex;align-items:flex-end"><button class="btn btn-primary" id="save-semi">追加</button></div>
+    </div>
+    <div class="table-wrap"><table><thead><tr><th>費目名</th><th>患者単価</th><th>針単価</th><th></th></tr></thead><tbody id="semi-list"></tbody></table></div>
+  </div>
+</div>
+
+<!-- ══ SIMULATOR ══ -->
+<div class="tab-panel" id="panel-simulator">
+  <div class="section-title"><span>🔮</span>利益予測シミュレーター</div>
+
+  <!-- 参照期間 & 外れ値除外 -->
+  <div class="card" id="sim-ref-card">
+    <div class="card-title">📂 実績参照期間</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+      <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:13px"><input type="radio" name="sim-period" value="3" id="sp3"> 過去3か月</label>
+      <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:13px"><input type="radio" name="sim-period" value="6" id="sp6" checked> 過去6か月</label>
+      <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:13px"><input type="radio" name="sim-period" value="12" id="sp12"> 過去12か月</label>
+      <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:13px"><input type="radio" name="sim-period" value="0" id="sp0"> 全期間（最大12か月）</label>
+    </div>
+    <div id="sim-actual-summary" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:14px"></div>
+    <!-- 外れ値月 -->
+    <div style="margin-top:8px">
+      <div style="font-size:12px;color:var(--text3);margin-bottom:6px">⚠️ 異常値月（チェックで施術データから除外）— 記録は保持されます</div>
+      <div id="sim-outlier-months" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+    </div>
+  </div>
+
+  <!-- 上昇率設定 -->
+  <div class="card">
+    <div class="card-title">📈 物価上昇率（年次ステップ）</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>針の年率上昇率（%）<span style="color:var(--text3);font-size:11px" id="sim-needle-rate-hint"></span></label>
+        <input type="number" id="sim-needle-rate" value="0" step="0.1" min="-50" max="200">
+      </div>
+      <div class="form-group">
+        <label>場所代の年率上昇率（%）</label>
+        <div style="display:flex;gap:6px;align-items:center">
+          <input type="number" id="sim-loc-rate" value="0" step="0.1" min="-50" max="200" style="flex:1">
+          <button class="btn btn-ghost btn-sm" id="sim-loc-copy">針と同率</button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>固定費の年率上昇率（%）</label>
+        <input type="number" id="sim-fixed-rate" value="0" step="0.1" min="-50" max="200">
+      </div>
+    </div>
+  </div>
+
+  <!-- 予測設定 -->
+  <div class="card">
+    <div class="card-title">🎯 予測パラメータ（実績から自動入力・手動調整可）</div>
+    <div class="form-row">
+      <div class="form-group"><label>月間施術件数</label><input type="number" id="sim-patients" value="0" min="0"></div>
+      <div class="form-group"><label>1施術あたり支払（円）</label><input type="number" id="sim-payment" value="0" min="0"></div>
+      <div class="form-group"><label>1施術あたり針数（本）</label><input type="number" id="sim-needles" value="0" min="0"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>予測期間（年）</label>
+        <select id="sim-years">
+          <option value="1">1年</option>
+          <option value="2">2年</option>
+          <option value="3" selected>3年</option>
+          <option value="5">5年</option>
+        </select>
+      </div>
+    </div>
+    <button class="btn btn-primary" id="run-sim">▶ 予測を実行</button>
+  </div>
+
+  <!-- 予測結果 -->
+  <div id="sim-output" style="display:none">
+    <!-- 年別サマリーカード -->
+    <div class="card">
+      <div class="card-title">📊 年別利益予測</div>
+      <div id="sim-year-cards" style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px"></div>
+      <div class="chart-wrap" style="height:220px"><canvas id="chart-sim-bar"></canvas></div>
+    </div>
+    <!-- ブレークイーブン -->
+    <div class="card">
+      <div class="card-title">⚖️ 損益分岐点（月間施術件数）</div>
+      <div id="sim-bep" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px"></div>
+    </div>
+    <!-- 費用内訳ドーナツ -->
+    <div class="card">
+      <div class="card-title">🍩 最終年の費用内訳</div>
+      <div class="chart-wrap" style="height:200px"><canvas id="chart-sim"></canvas></div>
+    </div>
+  </div>
+
+  <!-- バックテスト -->
+  <div class="card" id="sim-backtest-card">
+    <div class="card-title">🔬 バックテスト — 参照期間ごとの予測精度</div>
+    <div style="font-size:11px;color:var(--text3);margin-bottom:10px">過去データを前半・後半に分割し、前半の各期間平均で後半を予測した際の誤差率を比較します。</div>
+    <div class="table-wrap"><table><thead><tr><th>参照期間</th><th>予測利益/月</th><th>実績利益/月</th><th>誤差率</th><th></th></tr></thead><tbody id="backtest-body"></tbody></table></div>
+  </div>
+
+  <!-- 過去年次サマリー -->
+  <div class="card">
+    <div class="card-title" style="justify-content:space-between">
+      <span>🗂️ 過去の実績サマリー</span>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <button class="btn btn-sm hist-view-btn active" id="hist-btn-table" onclick="switchHistView('table')">📋 テーブル</button>
+        <button class="btn btn-sm hist-view-btn" id="hist-btn-year" onclick="switchHistView('year')">📈 年別グラフ</button>
+        <button class="btn btn-sm hist-view-btn" id="hist-btn-month" onclick="switchHistView('month')">📉 月別グラフ</button>
+      </div>
+    </div>
+    <!-- テーブルビュー -->
+    <div id="hist-view-table">
+      <div class="table-wrap"><table><thead><tr><th>年</th><th>施術件数</th><th>収入</th><th>針コスト</th><th>場所代</th><th>固定費</th><th>半変動費</th><th>利益</th><th>利益率</th></tr></thead><tbody id="sim-yearly-history"></tbody></table></div>
+    </div>
+    <!-- 年別グラフビュー -->
+    <div id="hist-view-year" style="display:none">
+      <div style="font-size:11px;color:var(--text3);margin-bottom:8px">年ごとの収入・支出・利益の推移</div>
+      <div class="chart-wrap" style="height:240px"><canvas id="chart-hist-year"></canvas></div>
+    </div>
+    <!-- 月別グラフビュー -->
+    <div id="hist-view-month" style="display:none">
+      <div style="font-size:11px;color:var(--text3);margin-bottom:8px">月ごとの収入・支出・利益の推移（全期間）</div>
+      <div class="chart-wrap" style="height:240px"><canvas id="chart-hist-month"></canvas></div>
+    </div>
+  </div>
+
+</div>
+
+</main>
+<!-- モーダル -->
+<div class="modal-overlay" id="modal-delete">
+  <div class="modal">
+    <div class="modal-title">削除の確認</div>
+    <p style="color:var(--text2);font-size:13px">この項目を削除してよろしいですか？</p>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="modal-cancel">キャンセル</button>
+      <button class="btn btn-danger" id="modal-confirm">削除</button>
+    </div>
+  </div>
+</div>
+<script>
+// ══ STORE ══
+const KEYS={needles:'acm_ndl',fixedCosts:'acm_fix',semiCosts:'acm_semi',patients:'acm_pat',visits:'acm_vis',purchases:'acm_pur',locations:'acm_loc'};
+function load(k){try{return JSON.parse(localStorage.getItem(k))||[];}catch{return[];}}
+function save(k,d){localStorage.setItem(k,JSON.stringify(d));}
+let S={
+  needles:load(KEYS.needles),fixedCosts:load(KEYS.fixedCosts),semiCosts:load(KEYS.semiCosts),
+  patients:load(KEYS.patients),visits:load(KEYS.visits),purchases:load(KEYS.purchases),locations:load(KEYS.locations)
+};
+function persist(k){save(KEYS[k],S[k]);}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
+function yen(v){return'¥'+Number(v).toLocaleString();}
+function today(){return new Date().toISOString().slice(0,10);}
+function thisMonth(){return new Date().toISOString().slice(0,7);}
+function getMonthVisits(ym){return S.visits.filter(v=>v.date.startsWith(ym));}
+function getPatientName(id){const p=S.patients.find(x=>x.id===id);return p?p.name:'(不明)';}
+function getLocationName(v){
+  if(!v.locationId)return v.locationOther||'—';
+  if(v.locationId==='other')return v.locationOther||'その他';
+  const l=S.locations.find(x=>x.id===v.locationId);return l?l.name:'—';
+}
+function getLocationFee(v){
+  if(!v.locationId||v.locationId==='other')return 0;
+  const l=S.locations.find(x=>x.id===v.locationId);return l?l.fee:0;
+}
+function calcNeedleCost(v){return(v.needlesUsed||[]).reduce((s,u)=>{const n=S.needles.find(x=>x.id===u.needleTypeId);return s+(n?n.unitPrice*u.qty:0);},0);}
+function calcSemi(v){const t=(v.needlesUsed||[]).reduce((s,u)=>s+u.qty,0);return S.semiCosts.reduce((s,c)=>s+(c.perPatient||0)+(c.perNeedle||0)*t,0);}
+function calcFixed(cnt){return S.fixedCosts.reduce((s,c)=>{if(c.billingType==='monthly')return s+c.amount;if(c.billingType==='perVisit')return s+c.amount*cnt;return s;},0);}
+
+// ══ TABS ══
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('panel-'+btn.dataset.tab).classList.add('active');
+    renderAll();
+  });
+});
+
+// ══ DELETE MODAL ══
+let pendingDel=null;
+function openDel(fn){pendingDel=fn;document.getElementById('modal-delete').classList.add('open');}
+document.getElementById('modal-cancel').addEventListener('click',()=>{pendingDel=null;document.getElementById('modal-delete').classList.remove('open');});
+document.getElementById('modal-confirm').addEventListener('click',()=>{if(pendingDel)pendingDel();pendingDel=null;document.getElementById('modal-delete').classList.remove('open');renderAll();});
+
+// ══ PATIENTS ══
+document.getElementById('save-patient').addEventListener('click',()=>{
+  const name=document.getElementById('patient-name').value.trim();
+  if(!name)return alert('氏名を入力してください');
+  S.patients.push({id:uid(),name,note:document.getElementById('patient-note').value.trim()});
+  persist('patients');
+  document.getElementById('patient-name').value='';document.getElementById('patient-note').value='';
+  renderAll();
+});
+function renderPatients(){
+  const el=document.getElementById('patient-list');
+  if(!S.patients.length){el.innerHTML='<tr><td colspan="6"><div class="empty-state">患者が登録されていません</div></td></tr>';return;}
+  el.innerHTML=S.patients.map((p,i)=>{
+    const vs=S.visits.filter(v=>v.patientId===p.id);
+    const tot=vs.reduce((s,v)=>s+(v.paymentReceived||0),0);
+    return`<tr><td style="color:var(--text3)">${i+1}</td><td><strong>${p.name}</strong></td><td>${vs.length}回</td><td><span class="badge badge-green">${yen(tot)}</span></td><td style="color:var(--text2);font-size:12px">${p.note||'—'}</td><td><button class="btn btn-danger" onclick="openDel(()=>delPatient('${p.id}'))">削除</button></td></tr>`;
+  }).join('');
+  const sel=document.getElementById('visit-patient');const cur=sel.value;
+  sel.innerHTML=S.patients.map(p=>`<option value="${p.id}">${p.name}</option>`).join('');
+  if(cur)sel.value=cur;
+}
+function delPatient(id){S.patients=S.patients.filter(x=>x.id!==id);S.visits=S.visits.filter(x=>x.patientId!==id);persist('patients');persist('visits');}
+
+// ══ NEEDLES MASTER ══
+function renderNeedles(){
+  const el=document.getElementById('needle-list');
+  if(!S.needles.length){el.innerHTML='<tr><td colspan="5"><div class="empty-state">購入登録すると自動生成されます</div></td></tr>';return;}
+  el.innerHTML=S.needles.map(n=>{
+    const hist=(n.priceHistory||[]).slice(-3).map(h=>`${h.date}:${yen(h.price)}`).join(' → ');
+    return`<tr><td><strong>${n.name}</strong></td><td>${yen(n.unitPrice)}/本</td><td>${(n.stock||0).toLocaleString()}本</td><td style="font-size:11px;color:var(--text3)">${hist}</td><td><button class="btn btn-danger" onclick="openDel(()=>delNeedle('${n.id}'))">削除</button></td></tr>`;
+  }).join('');
+  refreshNeedleSelects();
+}
+function delNeedle(id){S.needles=S.needles.filter(x=>x.id!==id);persist('needles');}
+function refreshNeedleSelects(){
+  document.querySelectorAll('.needle-select').forEach(sel=>{
+    const cur=sel.value;
+    sel.innerHTML='<option value="">-- 針を選択 --</option>'+S.needles.map(n=>`<option value="${n.id}">${n.name} (${yen(n.unitPrice)}/本)</option>`).join('');
+    if(cur)sel.value=cur;
+  });
+  // datalist for purchase
+  const dl=document.getElementById('purch-needle-datalist');
+  if(dl)dl.innerHTML=S.needles.map(n=>`<option value="${n.name}">`).join('');
+}
+
+// ══ PURCHASES ══
+function calcPurchPreview(){
+  const qpp=parseFloat(document.getElementById('purch-qty-pkg').value)||0;
+  const pricepp=parseFloat(document.getElementById('purch-price-pkg').value)||0;
+  const unit=qpp>0?(pricepp/qpp).toFixed(2):0;
+  document.getElementById('purch-preview').textContent=`本単価: ${unit>0?yen(unit)+'/本':'入力してください'}`;
+}
+['purch-qty-pkg','purch-price-pkg'].forEach(id=>{
+  const el=document.getElementById(id);
+  if(el)el.addEventListener('input',calcPurchPreview);
+});
+document.getElementById('save-purchase').addEventListener('click',()=>{
+  const nameInput=document.getElementById('purch-needle-name').value.trim();
+  const qpp=parseInt(document.getElementById('purch-qty-pkg').value)||0;
+  const totalPkg=parseInt(document.getElementById('purch-total-pkg').value)||1;
+  const pricepp=parseFloat(document.getElementById('purch-price-pkg').value)||0;
+  const date=document.getElementById('purch-date').value||today();
+  const note=document.getElementById('purch-note').value.trim();
+  if(!nameInput||qpp<=0||pricepp<=0)return alert('針名称・本数/パック・価格を入力してください');
+  const unitPrice=pricepp/qpp;
+  const totalNeedles=qpp*totalPkg;
+  // find or create needle type
+  let needle=S.needles.find(n=>n.name===nameInput);
+  if(!needle){
+    needle={id:uid(),name:nameInput,unitPrice,stock:0,priceHistory:[{price:unitPrice,date}]};
+    S.needles.push(needle);
+  } else {
+    const prevPrice=needle.unitPrice;
+    if(Math.abs(prevPrice-unitPrice)>0.001){
+      needle.priceHistory=needle.priceHistory||[];
+      needle.priceHistory.push({price:unitPrice,date});
+      needle.unitPrice=unitPrice;
+    }
+  }
+  needle.stock=(needle.stock||0)+totalNeedles;
+  persist('needles');
+  S.purchases.push({id:uid(),needleTypeId:needle.id,date,qtyPerPkg:qpp,totalPkg,unitPricePerPkg:pricepp,unitPrice,note});
+  persist('purchases');
+  // reset
+  document.getElementById('purch-needle-name').value='';
+  document.getElementById('purch-qty-pkg').value='';document.getElementById('purch-total-pkg').value='1';
+  document.getElementById('purch-price-pkg').value='';document.getElementById('purch-note').value='';
+  document.getElementById('purch-preview').textContent='本単価: —';
+  renderAll();alert('購入を登録しました');
+});
+function renderPurchases(){
+  const el=document.getElementById('purchase-list');
+  if(!S.purchases.length){el.innerHTML='<tr><td colspan="9"><div class="empty-state">購入記録がありません</div></td></tr>';return;}
+  el.innerHTML=[...S.purchases].sort((a,b)=>b.date.localeCompare(a.date)).map(p=>{
+    const n=S.needles.find(x=>x.id===p.needleTypeId);
+    const name=n?n.name:p.needleTypeId;
+    return`<tr><td>${p.date}</td><td><strong>${name}</strong></td><td>${p.qtyPerPkg}本</td><td>${p.totalPkg}pkg</td><td>${yen(p.unitPricePerPkg)}</td><td><span class="badge badge-green">${yen(p.unitPrice.toFixed(2))}/本</span></td><td>${(p.qtyPerPkg*p.totalPkg).toLocaleString()}本</td><td style="font-size:12px;color:var(--text2)">${p.note||'—'}</td><td><button class="btn btn-danger" onclick="openDel(()=>delPurchase('${p.id}'))">削除</button></td></tr>`;
+  }).join('');
+}
+function delPurchase(id){
+  const p=S.purchases.find(x=>x.id===id);
+  if(p){
+    const n=S.needles.find(x=>x.id===p.needleTypeId);
+    if(n){n.stock=Math.max(0,n.stock-(p.qtyPerPkg*p.totalPkg));persist('needles');}
+  }
+  S.purchases=S.purchases.filter(x=>x.id!==id);persist('purchases');
+}
+
+// ══ LOCATIONS ══
+document.getElementById('save-location').addEventListener('click',()=>{
+  const name=document.getElementById('loc-name').value.trim();
+  const fee=parseFloat(document.getElementById('loc-fee').value)||0;
+  if(!name)return alert('場所名を入力してください');
+  S.locations.push({id:uid(),name,fee});persist('locations');
+  document.getElementById('loc-name').value='';document.getElementById('loc-fee').value='';
+  renderAll();
+});
+function renderLocations(){
+  const el=document.getElementById('location-list');
+  if(!S.locations.length){el.innerHTML='<tr><td colspan="3"><div class="empty-state">場所が登録されていません</div></td></tr>';return;}
+  el.innerHTML=S.locations.map(l=>`<tr><td><strong>${l.name}</strong></td><td><span class="badge badge-cyan">${yen(l.fee)}/施術</span></td><td><button class="btn btn-danger" onclick="openDel(()=>delLocation('${l.id}'))">削除</button></td></tr>`).join('');
+  refreshLocationSel();
+}
+function delLocation(id){S.locations=S.locations.filter(x=>x.id!==id);persist('locations');}
+function refreshLocationSel(){
+  const sel=document.getElementById('visit-location');const cur=sel.value;
+  sel.innerHTML='<option value="">場所を選択</option>'+S.locations.map(l=>`<option value="${l.id}">${l.name}（${yen(l.fee)}/施術）</option>`).join('')+'<option value="other">その他（自由入力）</option>';
+  if(cur)sel.value=cur;
+}
+function toggleLocOther(){
+  const v=document.getElementById('visit-location').value;
+  document.getElementById('loc-other-wrap').classList.toggle('show',v==='other');
+}
+
+// ══ FIXED COSTS ══
+document.getElementById('save-fixed').addEventListener('click',()=>{
+  const name=document.getElementById('fixed-name').value.trim();
+  const amount=parseFloat(document.getElementById('fixed-amount').value);
+  if(!name||isNaN(amount))return alert('費目名と金額を入力してください');
+  S.fixedCosts.push({id:uid(),name,amount,billingType:document.getElementById('fixed-type').value});
+  persist('fixedCosts');document.getElementById('fixed-name').value='';document.getElementById('fixed-amount').value='';renderAll();
+});
+function renderFixedCosts(){
+  const el=document.getElementById('fixed-list');
+  if(!S.fixedCosts.length){el.innerHTML='<tr><td colspan="4"><div class="empty-state">固定費がありません</div></td></tr>';return;}
+  el.innerHTML=S.fixedCosts.map(c=>`<tr><td><strong>${c.name}</strong></td><td>${yen(c.amount)}</td><td><span class="badge badge-purple">${c.billingType==='monthly'?'月額':'1施術あたり'}</span></td><td><button class="btn btn-danger" onclick="openDel(()=>delFixed('${c.id}'))">削除</button></td></tr>`).join('');
+}
+function delFixed(id){S.fixedCosts=S.fixedCosts.filter(x=>x.id!==id);persist('fixedCosts');}
+
+// ══ SEMI COSTS ══
+document.getElementById('save-semi').addEventListener('click',()=>{
+  const name=document.getElementById('semi-name').value.trim();
+  if(!name)return alert('費目名を入力してください');
+  S.semiCosts.push({id:uid(),name,perPatient:parseFloat(document.getElementById('semi-per-patient').value)||0,perNeedle:parseFloat(document.getElementById('semi-per-needle').value)||0});
+  persist('semiCosts');document.getElementById('semi-name').value='';document.getElementById('semi-per-patient').value='';document.getElementById('semi-per-needle').value='';renderAll();
+});
+function renderSemiCosts(){
+  const el=document.getElementById('semi-list');
+  if(!S.semiCosts.length){el.innerHTML='<tr><td colspan="4"><div class="empty-state">半変動費がありません</div></td></tr>';return;}
+  el.innerHTML=S.semiCosts.map(c=>`<tr><td><strong>${c.name}</strong></td><td>${yen(c.perPatient)}/患者</td><td>${yen(c.perNeedle)}/本</td><td><button class="btn btn-danger" onclick="openDel(()=>delSemi('${c.id}'))">削除</button></td></tr>`).join('');
+}
+function delSemi(id){S.semiCosts=S.semiCosts.filter(x=>x.id!==id);persist('semiCosts');}
+
+// ══ VISITS ══
+let needleRows=[];
+function addNeedleRow(){
+  const rowId=uid();needleRows.push(rowId);
+  const div=document.createElement('div');div.className='needle-usage-row';div.id='nrow-'+rowId;
+  div.innerHTML=`<select class="needle-select" id="nsel-${rowId}"><option value="">-- 針を選択 --</option>${S.needles.map(n=>`<option value="${n.id}">${n.name}(${yen(n.unitPrice)}/本)</option>`).join('')}</select><input type="number" id="nqty-${rowId}" placeholder="本数" min="1" value="1" style="width:80px"><button class="btn btn-danger" onclick="removeNeedleRow('${rowId}')">×</button>`;
+  document.getElementById('needle-usage-list').appendChild(div);
+}
+function removeNeedleRow(r){needleRows=needleRows.filter(x=>x!==r);const el=document.getElementById('nrow-'+r);if(el)el.remove();}
+document.getElementById('add-needle-row').addEventListener('click',addNeedleRow);
+document.getElementById('save-visit').addEventListener('click',()=>{
+  const patientId=document.getElementById('visit-patient').value;
+  const date=document.getElementById('visit-date').value;
+  const payment=parseFloat(document.getElementById('visit-payment').value)||0;
+  const locationId=document.getElementById('visit-location').value||'';
+  const locationOther=document.getElementById('visit-location-other').value.trim();
+  const note=document.getElementById('visit-note').value.trim();
+  if(!patientId)return alert('患者を選択してください');
+  if(!date)return alert('日付を入力してください');
+  if(locationId==='other'&&!locationOther)return alert('場所（自由入力）を記入してください');
+  const needlesUsed=needleRows.map(r=>({needleTypeId:document.getElementById('nsel-'+r)?.value||'',qty:parseInt(document.getElementById('nqty-'+r)?.value)||0})).filter(u=>u.needleTypeId&&u.qty>0);
+  needlesUsed.forEach(u=>{const n=S.needles.find(x=>x.id===u.needleTypeId);if(n)n.stock=Math.max(0,n.stock-u.qty);});
+  persist('needles');
+  S.visits.push({id:uid(),patientId,date,needlesUsed,paymentReceived:payment,locationId,locationOther,note});
+  persist('visits');
+  document.getElementById('visit-payment').value='';document.getElementById('visit-note').value='';
+  document.getElementById('visit-location').value='';document.getElementById('visit-location-other').value='';
+  document.getElementById('loc-other-wrap').classList.remove('show');
+  document.getElementById('needle-usage-list').innerHTML='';needleRows=[];
+  renderAll();alert('施術記録を保存しました');
+});
+document.getElementById('visits-month').addEventListener('change',renderVisits);
+function renderVisits(){
+  const ym=document.getElementById('visits-month').value||thisMonth();
+  const visits=getMonthVisits(ym);
+  const el=document.getElementById('visit-list');
+  if(!visits.length){el.innerHTML='<tr><td colspan="9"><div class="empty-state">施術記録がありません</div></td></tr>';return;}
+  el.innerHTML=[...visits].sort((a,b)=>b.date.localeCompare(a.date)).map(v=>{
+    const nc=calcNeedleCost(v);const nt=(v.needlesUsed||[]).reduce((s,u)=>s+u.qty,0);const lf=getLocationFee(v);
+    return`<tr><td>${v.date}</td><td>${getPatientName(v.patientId)}</td><td>${getLocationName(v)}</td><td>${nt}本</td><td><span class="badge badge-red">${yen(nc)}</span></td><td><span class="badge badge-yellow">${yen(lf)}</span></td><td><span class="badge badge-green">${yen(v.paymentReceived)}</span></td><td style="font-size:12px;color:var(--text2)">${v.note||'—'}</td><td><button class="btn btn-danger" onclick="openDel(()=>delVisit('${v.id}'))">削除</button></td></tr>`;
+  }).join('');
+}
+function delVisit(id){
+  const v=S.visits.find(x=>x.id===id);
+  if(v){(v.needlesUsed||[]).forEach(u=>{const n=S.needles.find(x=>x.id===u.needleTypeId);if(n)n.stock+=u.qty;});persist('needles');}
+  S.visits=S.visits.filter(x=>x.id!==id);persist('visits');
+}
+
+// ══ NEEDLE ANALYSIS ══
+function renderNeedleAnalysis(){
+  const el=document.getElementById('needle-analysis');
+  if(!S.needles.length){el.innerHTML='<div style="color:var(--text3);font-size:13px">針を登録すると消費分析が表示されます</div>';return;}
+  const now=new Date();const past30=new Date(now-30*864e5).toISOString().slice(0,10);
+  el.innerHTML=S.needles.map(n=>{
+    const consumed=S.visits.filter(v=>v.date>=past30).reduce((s,v)=>{
+      return s+(v.needlesUsed||[]).filter(u=>u.needleTypeId===n.id).reduce((a,u)=>a+u.qty,0);
+    },0);
+    const dailyAvg=consumed/30;
+    const daysLeft=dailyAvg>0?Math.floor((n.stock||0)/dailyAvg):Infinity;
+    const warn=daysLeft<30&&daysLeft!==Infinity;
+    const nextPurchCost=dailyAvg>0?Math.round(dailyAvg*30*n.unitPrice):0;
+    return`<div class="analysis-card${warn?' warn-card':''}">
+      <div class="analysis-card-title">${n.name}</div>
+      <div class="analysis-main">${(n.stock||0).toLocaleString()}本</div>
+      <div class="analysis-sub">在庫 | 単価 ${yen(n.unitPrice)}/本</div>
+      <div style="margin-top:8px;font-size:12px;color:${warn?'var(--warn)':'var(--text2)'}">
+        ${daysLeft===Infinity?'消費データなし':`残約 <strong>${daysLeft}</strong> 日`}
+        ${warn?'<span class="badge badge-yellow" style="margin-left:4px">要発注</span>':''}
+      </div>
+      <div style="font-size:11px;color:var(--text3);margin-top:4px">30日消費: ${consumed}本 | 月予測費用: ${nextPurchCost>0?yen(nextPurchCost):'—'}</div>
+    </div>`;
+  }).join('');
+}
+
+// ══ DASHBOARD ══
+document.getElementById('dash-month').addEventListener('change',renderDashboard);
+function renderDashboard(){
+  const ym=document.getElementById('dash-month').value||thisMonth();
+  const visits=getMonthVisits(ym);
+  const income=visits.reduce((s,v)=>s+(v.paymentReceived||0),0);
+  const nc=visits.reduce((s,v)=>s+calcNeedleCost(v),0);
+  const sc=visits.reduce((s,v)=>s+calcSemi(v),0);
+  const lc=visits.reduce((s,v)=>s+getLocationFee(v),0);
+  const fc=calcFixed(visits.length);
+  const expense=nc+sc+lc+fc;const profit=income-expense;
+  const margin=income>0?Math.round(profit/income*100):0;
+  document.getElementById('dash-income').textContent=yen(income);
+  document.getElementById('dash-expense').textContent=yen(expense);
+  document.getElementById('dash-profit').textContent=yen(profit);
+  document.getElementById('dash-profit').style.color=profit>=0?'var(--accent)':'var(--danger)';
+  document.getElementById('dash-patients').textContent=S.patients.length;
+  document.getElementById('dash-vcnt').textContent=`施術 ${visits.length}件`;
+  document.getElementById('dash-ndlcost').textContent=`針 ${yen(nc)} | 場所 ${yen(lc)}`;
+  document.getElementById('dash-margin').textContent=`利益率 ${margin}%`;
+  // visit list
+  const tbody=document.getElementById('dash-visit-list');
+  if(!visits.length){tbody.innerHTML='<tr><td colspan="5"><div class="empty-state">今月の施術記録はありません</div></td></tr>';}
+  else{tbody.innerHTML=[...visits].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,10).map(v=>{
+    const nt=(v.needlesUsed||[]).reduce((s,u)=>s+u.qty,0);
+    return`<tr><td>${v.date}</td><td>${getPatientName(v.patientId)}</td><td>${getLocationName(v)}</td><td>${nt}本</td><td><span class="badge badge-green">${yen(v.paymentReceived)}</span></td></tr>`;
+  }).join('');}
+  renderCharts(ym);renderNeedleAnalysis();
+}
+function getMonthRange(baseYm,count){
+  const[y,m]=baseYm.split('-').map(Number);
+  return Array.from({length:count},(_,i)=>{const d=new Date(y,m-1-(count-1-i));return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;});
+}
+// ══ NICE SCALE HELPER ══
+function niceNum(range,round){
+  const exp=Math.floor(Math.log10(range));
+  const frac=range/Math.pow(10,exp);
+  let nice;
+  if(round){
+    if(frac<1.5)nice=1;else if(frac<3)nice=2;else if(frac<7)nice=5;else nice=10;
+  }else{
+    if(frac<=1)nice=1;else if(frac<=2)nice=2;else if(frac<=5)nice=5;else nice=10;
+  }
+  return nice*Math.pow(10,exp);
+}
+function calcNiceScale(allValues){
+  const vals=allValues.filter(v=>v!=null&&isFinite(v));
+  if(!vals.length)return {};
+  let dMin=Math.min(...vals),dMax=Math.max(...vals);
+  if(dMin===dMax){
+    if(dMin===0){dMin=-1000;dMax=1000;}
+    else{const pad=Math.abs(dMin)*0.1;dMin-=pad;dMax+=pad;}
+  }
+  // Include 0 if data is near zero or crosses zero
+  if(dMin>0&&dMin<dMax*0.15)dMin=0;
+  if(dMax<0&&dMax>dMin*0.15)dMax=0;
+  const range=niceNum(dMax-dMin,false);
+  const step=niceNum(range/5,true);
+  const nMin=Math.floor(dMin/step)*step;
+  const nMax=Math.ceil(dMax/step)*step;
+  return {min:nMin,max:nMax,stepSize:step};
+}
+function niceYScale(allValues){
+  const ns=calcNiceScale(allValues);
+  return {min:ns.min,max:ns.max,ticks:{color:'#94a3b8',stepSize:ns.stepSize,callback:v=>'¥'+v.toLocaleString()},grid:{color:'rgba(45,50,80,.5)'}};
+}
+
+function renderCharts(ym){
+  const months=getMonthRange(ym,6);
+  const labels=months.map(m=>m.slice(2).replace('-','/'));
+  const inc=[],exp=[],prof=[];
+  months.forEach(mo=>{
+    const vs=getMonthVisits(mo);
+    const i=vs.reduce((s,v)=>s+(v.paymentReceived||0),0);
+    const e=vs.reduce((s,v)=>s+calcNeedleCost(v)+calcSemi(v)+getLocationFee(v),0)+calcFixed(vs.length);
+    inc.push(i);exp.push(e);prof.push(i-e);
+  });
+  const cum=prof.reduce((acc,p,i)=>{acc.push((acc[i-1]||0)+p);return acc;},[]);
+  const barYScale=niceYScale([...inc,...exp,...prof]);
+  const cashYScale=niceYScale(cum);
+  [{id:'chart-monthly',type:'bar',data:{labels,datasets:[{label:'収入',data:inc,backgroundColor:'rgba(52,211,153,.7)',borderRadius:4},{label:'費用',data:exp,backgroundColor:'rgba(248,113,113,.7)',borderRadius:4},{label:'利益',data:prof,backgroundColor:'rgba(124,106,247,.7)',borderRadius:4}]},yScale:barYScale},{id:'chart-cash',type:'line',data:{labels,datasets:[{label:'累計キャッシュ',data:cum,borderColor:'rgba(94,234,212,.9)',backgroundColor:'rgba(94,234,212,.1)',fill:true,tension:.4}]},yScale:cashYScale}].forEach(def=>{
+    const c=document.getElementById(def.id);if(!c)return;const ex=Chart.getChart(c);if(ex)ex.destroy();
+    new Chart(c,{type:def.type,data:def.data,options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#94a3b8',font:{size:11}}}},scales:{x:{ticks:{color:'#94a3b8'},grid:{color:'rgba(45,50,80,.5)'}},y:def.yScale}}});
+  });
+}
+
+// ══ SIMULATOR ══
+
+// --- Helpers ---
+function getMonthList(){// all YYYY-MM that appear in visits, sorted ascending
+  const s=new Set(S.visits.map(v=>v.date.slice(0,7)));return[...s].sort();
+}
+function getRecentMonths(n){// last n calendar months (YYYY-MM), n=0 → last 12
+  const cap=n===0?12:n;
+  const now=new Date();const res=[];
+  for(let i=cap-1;i>=0;i--){const d=new Date(now.getFullYear(),now.getMonth()-i,1);res.push(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`);}return res;
+}
+function detectOutlierMonths(){// months where visit count < 50% of overall avg (min 3 data months)
+  const byMonth={};
+  S.visits.forEach(v=>{const m=v.date.slice(0,7);byMonth[m]=(byMonth[m]||0)+1;});
+  const months=Object.keys(byMonth);if(months.length<3)return[];
+  const avg=Object.values(byMonth).reduce((a,b)=>a+b,0)/months.length;
+  return months.filter(m=>byMonth[m]<avg*0.5);
+}
+// calcActualAverages: returns {visits,payment,needleCnt,needleCost,locFee,fixedMonthly,semiPerVisit} as monthly averages
+// visitData uses only monthsInPeriod minus excluded; costData always from full 12-month window
+function calcActualAverages(periodMonths,excluded){
+  const excl=new Set(excluded||[]);
+  const visitMonths=periodMonths.filter(m=>!excl.has(m));
+  const costMonths=getRecentMonths(12);// fixed/loc cost always from full 12mo
+  // visit data
+  const vis=visitMonths.length?visitMonths.map(m=>{
+    const vs=getMonthVisits(m);
+    const income=vs.reduce((s,v)=>s+(v.paymentReceived||0),0);
+    const nc=vs.reduce((s,v)=>s+calcNeedleCost(v),0);
+    const lc=vs.reduce((s,v)=>s+getLocationFee(v),0);
+    const nn=vs.reduce((s,v)=>s+(v.needlesUsed||[]).reduce((a,u)=>a+u.qty,0),0);
+    return{cnt:vs.length,income,nc,lc,nn};
+  }):[];
+  const hasVis=vis.some(m=>m.cnt>0);
+  const avgCnt=hasVis?vis.reduce((s,m)=>s+m.cnt,0)/visitMonths.length:null;
+  const avgPay=hasVis&&vis.reduce((s,m)=>s+m.cnt,0)>0?vis.reduce((s,m)=>s+m.income,0)/vis.reduce((s,m)=>s+m.cnt,0):null;
+  const avgNdl=hasVis&&vis.reduce((s,m)=>s+m.cnt,0)>0?vis.reduce((s,m)=>s+m.nn,0)/vis.reduce((s,m)=>s+m.cnt,0):null;
+  const avgNdlCost=hasVis&&vis.reduce((s,m)=>s+m.cnt,0)>0?vis.reduce((s,m)=>s+m.nc,0)/vis.reduce((s,m)=>s+m.cnt,0):null;
+  const avgLocFee=hasVis&&vis.reduce((s,m)=>s+m.cnt,0)>0?vis.reduce((s,m)=>s+m.lc,0)/vis.reduce((s,m)=>s+m.cnt,0):null;
+  // cost data (full 12mo, not affected by outlier exclusion)
+  const costVis=costMonths.map(m=>getMonthVisits(m));
+  const totalCostVisits=costVis.reduce((s,vs)=>s+vs.length,0);
+  const fixedMonthly=S.fixedCosts.reduce((s,c)=>c.billingType==='monthly'?s+c.amount:s,0);
+  const fixedPerVisit=S.fixedCosts.reduce((s,c)=>c.billingType==='perVisit'?s+c.amount:s,0);
+  const avgFixedPerMonth=fixedMonthly+(totalCostVisits>0?(fixedPerVisit*totalCostVisits/costMonths.length):0);
+  const avgSemiPerVisit=S.semiCosts.reduce((s,c)=>s+(c.perPatient||0),0)+(S.semiCosts.reduce((s,c)=>s+(c.perNeedle||0),0))*(avgNdl||0);
+  return{avgCnt,avgPay,avgNdl,avgNdlCost,avgLocFee,avgFixedPerMonth,avgSemiPerVisit,visitMonths,hasVis,hasEnough:visitMonths.length>=2};
+}
+function calcNeedlePriceGrowthRate(){// weighted annual rate from price histories
+  if(!S.needles.length)return 0;
+  const rates=[];
+  S.needles.forEach(n=>{
+    const hist=(n.priceHistory||[]).slice().sort((a,b)=>a.date.localeCompare(b.date));
+    if(hist.length<2)return;
+    const first=hist[0],last=hist[hist.length-1];
+    const days=(new Date(last.date)-new Date(first.date))/(1000*86400);
+    if(days<30||first.price<=0)return;
+    const years=days/365;
+    const rate=(Math.pow(last.price/first.price,1/years)-1)*100;
+    rates.push(rate);
+  });
+  if(!rates.length)return 0;
+  return Math.round(rates.reduce((a,b)=>a+b,0)/rates.length*10)/10;
+}
+
+// Excluded months state
+let simExcluded=new Set();
+
+function renderSimRefCard(){
+  const period=parseInt(document.querySelector('input[name="sim-period"]:checked')?.value||6);
+  const months=getRecentMonths(period);
+  const autoOutliers=detectOutlierMonths();
+  // update excluded (remove months not in current period)
+  simExcluded=new Set([...simExcluded].filter(m=>months.includes(m)));
+  // auto-add newly detected outliers that user hasn't explicitly cleared
+  autoOutliers.forEach(m=>{if(months.includes(m))simExcluded.add(m);});
+  const avgs=calcActualAverages(months,[...simExcluded]);
+  // summary cards
+  const summaryEl=document.getElementById('sim-actual-summary');
+  const fmt=(v,unit='')=>v!=null?`${Math.round(v).toLocaleString()}${unit}`:'—';
+  const warn=!avgs.hasEnough?'<span style="color:var(--warn);font-size:11px">（データ不足 — 予測は参考値）</span>':'';
+  summaryEl.innerHTML=[
+    {label:'月間施術件数',val:fmt(avgs.avgCnt,'件')},
+    {label:'1施術あたり支払',val:avgs.avgPay!=null?yen(Math.round(avgs.avgPay)):'—'},
+    {label:'1施術あたり針数',val:fmt(avgs.avgNdl,'本')},
+    {label:'1施術あたり針コスト',val:avgs.avgNdlCost!=null?yen(Math.round(avgs.avgNdlCost)):'—'},
+    {label:'1施術あたり場所代',val:avgs.avgLocFee!=null?yen(Math.round(avgs.avgLocFee)):'—'},
+    {label:'月間固定費(実績)',val:yen(Math.round(avgs.avgFixedPerMonth))},
+  ].map(i=>`<div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px">
+    <div style="font-size:10px;color:var(--text3);margin-bottom:4px">${i.label}</div>
+    <div style="font-size:16px;font-weight:700">${i.val}</div>
+  </div>`).join('')+(warn?`<div style="grid-column:1/-1;font-size:12px;color:var(--warn)">${warn.replace(/<[^>]+>/g,'')}</div>`:'')
+  ;
+  // outlier months checkboxes
+  const outlEl=document.getElementById('sim-outlier-months');
+  // all months with data
+  const byMonth={};
+  S.visits.forEach(v=>{const m=v.date.slice(0,7);byMonth[m]=(byMonth[m]||0)+1;});
+  const dataMonths=Object.keys(byMonth).filter(m=>months.includes(m)).sort();
+  if(!dataMonths.length){outlEl.innerHTML='<span style="color:var(--text3);font-size:12px">施術記録がありません</span>';return;}
+  outlEl.innerHTML=dataMonths.map(m=>{
+    const isAuto=autoOutliers.includes(m);
+    const isExcl=simExcluded.has(m);
+    return`<label style="display:flex;align-items:center;gap:4px;font-size:12px;padding:4px 8px;border-radius:6px;background:${isExcl?'rgba(248,113,113,.15)':isAuto?'rgba(251,191,36,.1)':'var(--bg3)'};border:1px solid ${isExcl?'var(--danger)':isAuto?'var(--warn)':'var(--border)'};cursor:pointer">
+      <input type="checkbox" ${isExcl?'checked':''} onchange="toggleExcluded('${m}',this.checked)"> ${m} (${byMonth[m]}件)${isAuto?'<span style="color:var(--warn);font-size:10px"> 自動検出</span>':''}
+    </label>`;
+  }).join('');
+  // auto-fill prediction params
+  if(avgs.avgCnt!=null)document.getElementById('sim-patients').value=Math.round(avgs.avgCnt);
+  if(avgs.avgPay!=null)document.getElementById('sim-payment').value=Math.round(avgs.avgPay);
+  if(avgs.avgNdl!=null)document.getElementById('sim-needles').value=Math.round(avgs.avgNdl*10)/10;
+  // needle rate
+  const rate=calcNeedlePriceGrowthRate();
+  document.getElementById('sim-needle-rate').value=rate;
+  document.getElementById('sim-needle-rate-hint').textContent=rate!==0?` 購入履歴から自動計算: ${rate}%/年`:'';
+}
+function toggleExcluded(m,checked){if(checked)simExcluded.add(m);else simExcluded.delete(m);renderSimRefCard();}
+document.querySelectorAll('input[name="sim-period"]').forEach(r=>r.addEventListener('change',renderSimRefCard));
+document.getElementById('sim-loc-copy').addEventListener('click',()=>{
+  document.getElementById('sim-loc-rate').value=document.getElementById('sim-needle-rate').value;
+});
+
+document.getElementById('run-sim').addEventListener('click',()=>{
+  const np=parseFloat(document.getElementById('sim-patients').value)||0;
+  const nn=parseFloat(document.getElementById('sim-needles').value)||0;
+  const pay=parseFloat(document.getElementById('sim-payment').value)||0;
+  const ndlRate=parseFloat(document.getElementById('sim-needle-rate').value)||0;
+  const locRate=parseFloat(document.getElementById('sim-loc-rate').value)||0;
+  const fixRate=parseFloat(document.getElementById('sim-fixed-rate').value)||0;
+  const years=parseInt(document.getElementById('sim-years').value)||3;
+  const period=parseInt(document.querySelector('input[name="sim-period"]:checked')?.value||6);
+  const months=getRecentMonths(period);
+  const avgs=calcActualAverages(months,[...simExcluded]);
+  // base needle cost per visit (from actual avg if available, else from needle master)
+  const baseNdlCostPerVisit=avgs.avgNdlCost!=null?avgs.avgNdlCost:
+    (S.needles.length?S.needles.reduce((s,n)=>s+n.unitPrice,0)/S.needles.length:0)*nn;
+  const baseLoc=avgs.avgLocFee!=null?avgs.avgLocFee:0;
+  const baseFixed=avgs.avgFixedPerMonth;
+  const baseSemi=avgs.avgSemiPerVisit;
+  // build year-by-year (annual step increase)
+  const yearData=[];
+  for(let y=1;y<=years;y++){
+    const ndlMult=Math.pow(1+ndlRate/100,y-1);
+    const locMult=Math.pow(1+locRate/100,y-1);
+    const fixMult=Math.pow(1+fixRate/100,y-1);
+    const annualIncome=np*pay*12;
+    const annualNdl=np*baseNdlCostPerVisit*ndlMult*12;
+    const annualLoc=np*baseLoc*locMult*12;
+    const annualFixed=baseFixed*fixMult*12;
+    const annualSemi=np*baseSemi*12;
+    const annualExp=annualNdl+annualLoc+annualFixed+annualSemi;
+    const annualProfit=annualIncome-annualExp;
+    const margin=annualIncome>0?Math.round(annualProfit/annualIncome*100):0;
+    yearData.push({y,annualIncome,annualNdl,annualLoc,annualFixed,annualSemi,annualExp,annualProfit,margin,ndlMult,locMult,fixMult});
+  }
+  // year cards
+  const cardsEl=document.getElementById('sim-year-cards');
+  cardsEl.innerHTML=yearData.map(d=>{
+    const color=d.annualProfit>=0?'var(--success)':'var(--danger)';
+    const rateHint=[ndlRate?`針+${ndlRate}%`:'',locRate?`場所代+${locRate}%`:'',fixRate?`固定費+${fixRate}%`:''].filter(Boolean);
+    return`<div style="flex:1;min-width:140px;background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:14px">
+      <div style="font-size:11px;color:var(--text3);margin-bottom:6px">${d.y}年目${rateHint.length?'<br><span style="color:var(--warn);font-size:10px">'+rateHint.join(' / ')+'</span>':''}</div>
+      <div style="font-size:20px;font-weight:700;color:${color}">${yen(Math.round(d.annualProfit))}</div>
+      <div style="font-size:11px;color:var(--text2);margin-top:4px">年間利益 | 利益率 ${d.margin}%</div>
+      <div style="font-size:11px;color:var(--text3);margin-top:2px">収入 ${yen(Math.round(d.annualIncome))}</div>
+    </div>`;
+  }).join('');
+  // bar chart
+  const bc=document.getElementById('chart-sim-bar');const bex=Chart.getChart(bc);if(bex)bex.destroy();
+  const simIncArr=yearData.map(d=>Math.round(d.annualIncome)),simExpArr=yearData.map(d=>Math.round(d.annualExp)),simProfArr=yearData.map(d=>Math.round(d.annualProfit));
+  const simBarYScale=niceYScale([...simIncArr,...simExpArr,...simProfArr]);
+  new Chart(bc,{type:'bar',data:{
+    labels:yearData.map(d=>`${d.y}年目`),
+    datasets:[
+      {label:'年間収入',data:simIncArr,backgroundColor:'rgba(52,211,153,.7)',borderRadius:4},
+      {label:'年間支出',data:simExpArr,backgroundColor:'rgba(248,113,113,.7)',borderRadius:4},
+      {label:'年間利益',data:simProfArr,backgroundColor:'rgba(124,106,247,.7)',borderRadius:4},
+    ]
+  },options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#94a3b8',font:{size:11}}}},scales:{x:{ticks:{color:'#94a3b8'},grid:{color:'rgba(45,50,80,.4)'}},y:simBarYScale}}});
+  // BEP
+  const bepEl=document.getElementById('sim-bep');
+  bepEl.innerHTML=yearData.filter((_,i)=>i===0||i===yearData.length-1).map(d=>{
+    const fixedTotal=d.annualFixed/12+d.annualSemi/(np||1);
+    const vcPerVisit=(d.annualNdl+d.annualLoc)/(np*12||1);
+    const margContr=pay-vcPerVisit;
+    const bep=margContr>0?Math.ceil((d.annualFixed/12)/margContr):null;
+    return`<div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:14px">
+      <div style="font-size:11px;color:var(--text3);margin-bottom:5px">${d.y}年目の損益分岐</div>
+      <div style="font-size:22px;font-weight:700;color:var(--accent)">${bep!=null?bep+'件/月':'算出不可'}</div>
+      <div style="font-size:11px;color:var(--text2);margin-top:4px">現在の月間件数: ${Math.round(np)}件</div>
+    </div>`;
+  }).join('');
+  // doughnut (last year)
+  const last=yearData[yearData.length-1];
+  const dc=document.getElementById('chart-sim');const dex=Chart.getChart(dc);if(dex)dex.destroy();
+  new Chart(dc,{type:'doughnut',data:{labels:['針コスト','場所代','固定費','半変動費'],datasets:[{data:[Math.max(0,Math.round(last.annualNdl)),Math.max(0,Math.round(last.annualLoc)),Math.max(0,Math.round(last.annualFixed)),Math.max(0,Math.round(last.annualSemi))],backgroundColor:['rgba(248,113,113,.8)','rgba(251,191,36,.8)','rgba(124,106,247,.8)','rgba(94,234,212,.8)'],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:'#94a3b8',font:{size:11}}}}}});
+  document.getElementById('sim-output').style.display='block';
+  runBacktest();
+});
+
+function runBacktest(){
+  const PERIODS=[{label:'過去3か月',n:3},{label:'過去6か月',n:6},{label:'過去12か月',n:12},{label:'全期間（max12）',n:0}];
+  // collect all months with data, sorted
+  const byMonth={};
+  S.visits.forEach(v=>{const m=v.date.slice(0,7);byMonth[m]=(byMonth[m]||0)+1;});
+  const allMonths=Object.keys(byMonth).sort();
+  const tbody=document.getElementById('backtest-body');
+  if(allMonths.length<4){
+    tbody.innerHTML=`<tr><td colspan="5" style="color:var(--text3);text-align:center;font-size:12px">施術データが4か月以上ないとバックテストできません（現在${allMonths.length}か月分）</td></tr>`;
+    return;
+  }
+  const mid=Math.floor(allMonths.length/2);
+  const frontMonths=allMonths.slice(0,mid);
+  const backMonths=allMonths.slice(mid);
+  // actual avg profit per month in back half
+  const backVisits=backMonths.flatMap(m=>getMonthVisits(m));
+  const backIncome=backVisits.reduce((s,v)=>s+(v.paymentReceived||0),0);
+  const backCosts=backVisits.reduce((s,v)=>s+calcNeedleCost(v)+calcSemi(v)+getLocationFee(v),0);
+  const fixedAvg=S.fixedCosts.reduce((s,c)=>c.billingType==='monthly'?s+c.amount:s,0)+
+    S.fixedCosts.reduce((s,c)=>c.billingType==='perVisit'?s+c.amount:s,0)*(backVisits.length/backMonths.length);
+  const actualMonthlyProfit=(backIncome-backCosts-fixedAvg*backMonths.length)/backMonths.length;
+  let best=null,bestErr=Infinity;
+  const rows=PERIODS.map(p=>{
+    const cap=p.n===0?12:p.n;
+    const periodMs=frontMonths.slice(-cap);
+    const avgs=calcActualAverages(periodMs,[]);
+    const enough=avgs.hasEnough;
+    if(!enough||avgs.avgCnt==null){
+      return{...p,predicted:null,actual:actualMonthlyProfit,err:null,enough};
+    }
+    const predictedIncome=(avgs.avgCnt)*(avgs.avgPay||0);
+    const predictedNdl=(avgs.avgNdlCost||0)*(avgs.avgCnt);
+    const predictedLoc=(avgs.avgLocFee||0)*(avgs.avgCnt);
+    const predictedFixed=avgs.avgFixedPerMonth;
+    const predictedSemi=(avgs.avgSemiPerVisit||0)*(avgs.avgCnt);
+    const predictedProfit=predictedIncome-predictedNdl-predictedLoc-predictedFixed-predictedSemi;
+    const err=actualMonthlyProfit!==0?Math.abs((predictedProfit-actualMonthlyProfit)/actualMonthlyProfit)*100:null;
+    if(err!=null&&err<bestErr){bestErr=err;best=p.label;}
+    return{...p,predicted:predictedProfit,actual:actualMonthlyProfit,err,enough};
+  });
+  tbody.innerHTML=rows.map(r=>{
+    const isBest=r.label===best&&r.err!=null;
+    return`<tr style="${isBest?'background:rgba(52,211,153,.07)':''}">
+      <td><strong>${r.label}</strong></td>
+      <td>${r.predicted!=null?yen(Math.round(r.predicted)):'—'}</td>
+      <td>${yen(Math.round(r.actual))}</td>
+      <td>${r.err!=null?r.err.toFixed(1)+'%':'<span style="color:var(--text3);font-size:11px">検証データ不足 — 参考値</span>'}</td>
+      <td>${isBest?'<span class="badge badge-green">⭐ 最高精度</span>':''}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ── Historical data helpers ──
+function buildHistYearData(){
+  const byYear={};
+  S.visits.forEach(v=>{
+    const yr=v.date.slice(0,4);
+    if(!byYear[yr])byYear[yr]=[];
+    byYear[yr].push(v);
+  });
+  return Object.keys(byYear).sort().map(yr=>{
+    const vs=byYear[yr];
+    const income=vs.reduce((s,v)=>s+(v.paymentReceived||0),0);
+    const nc=vs.reduce((s,v)=>s+calcNeedleCost(v),0);
+    const lc=vs.reduce((s,v)=>s+getLocationFee(v),0);
+    const mos=new Set(vs.map(v=>v.date.slice(0,7))).size;
+    const monthly=S.fixedCosts.reduce((s,c)=>c.billingType==='monthly'?s+c.amount:s,0);
+    const perVisit=S.fixedCosts.reduce((s,c)=>c.billingType==='perVisit'?s+c.amount:s,0);
+    const fc=monthly*mos+perVisit*vs.length;
+    const sc=vs.reduce((s,v)=>s+calcSemi(v),0);
+    const exp=nc+lc+fc+sc;
+    return{yr,cnt:vs.length,income,nc,lc,fc,sc,exp,profit:income-exp};
+  });
+}
+function buildHistMonthData(){
+  const byMonth={};
+  S.visits.forEach(v=>{
+    const m=v.date.slice(0,7);
+    if(!byMonth[m])byMonth[m]=[];
+    byMonth[m].push(v);
+  });
+  return Object.keys(byMonth).sort().map(m=>{
+    const vs=byMonth[m];
+    const income=vs.reduce((s,v)=>s+(v.paymentReceived||0),0);
+    const nc=vs.reduce((s,v)=>s+calcNeedleCost(v),0);
+    const lc=vs.reduce((s,v)=>s+getLocationFee(v),0);
+    const monthly=S.fixedCosts.reduce((s,c)=>c.billingType==='monthly'?s+c.amount:s,0);
+    const perVisit=S.fixedCosts.reduce((s,c)=>c.billingType==='perVisit'?s+c.amount:s,0);
+    const fc=monthly+perVisit*vs.length;
+    const sc=vs.reduce((s,v)=>s+calcSemi(v),0);
+    const exp=nc+lc+fc+sc;
+    return{m,cnt:vs.length,income,exp,profit:income-exp};
+  });
+}
+
+let currentHistView='table';
+function switchHistView(view){
+  currentHistView=view;
+  ['table','year','month'].forEach(v=>{
+    document.getElementById('hist-view-'+v).style.display=v===view?'':'none';
+    const btn=document.getElementById('hist-btn-'+v);
+    if(btn){btn.classList.toggle('active',v===view);}
+  });
+  if(view==='year')renderHistYearChart();
+  if(view==='month')renderHistMonthChart();
+}
+function renderHistYearChart(){
+  const data=buildHistYearData();
+  const c=document.getElementById('chart-hist-year');if(!c)return;
+  const ex=Chart.getChart(c);if(ex)ex.destroy();
+  if(!data.length){return;}
+  const yrInc=data.map(d=>d.income),yrExp=data.map(d=>d.exp),yrProf=data.map(d=>d.profit);
+  const yrYScale=niceYScale([...yrInc,...yrExp,...yrProf]);
+  new Chart(c,{type:'line',data:{
+    labels:data.map(d=>d.yr+'年'),
+    datasets:[
+      {label:'収入',data:yrInc,borderColor:'rgba(52,211,153,.9)',backgroundColor:'rgba(52,211,153,.1)',fill:false,tension:.3,pointRadius:4},
+      {label:'支出',data:yrExp,borderColor:'rgba(248,113,113,.9)',backgroundColor:'rgba(248,113,113,.1)',fill:false,tension:.3,pointRadius:4},
+      {label:'利益',data:yrProf,borderColor:'rgba(124,106,247,.9)',backgroundColor:'rgba(124,106,247,.15)',fill:true,tension:.3,pointRadius:4},
+    ]
+  },options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#94a3b8',font:{size:11}}}},scales:{x:{ticks:{color:'#94a3b8'},grid:{color:'rgba(45,50,80,.5)'}},y:yrYScale}}});
+}
+function renderHistMonthChart(){
+  const data=buildHistMonthData();
+  const c=document.getElementById('chart-hist-month');if(!c)return;
+  const ex=Chart.getChart(c);if(ex)ex.destroy();
+  if(!data.length){return;}
+  const moInc=data.map(d=>d.income),moExp=data.map(d=>d.exp),moProf=data.map(d=>d.profit);
+  const moYScale=niceYScale([...moInc,...moExp,...moProf]);
+  new Chart(c,{type:'line',data:{
+    labels:data.map(d=>d.m.slice(2).replace('-','/')),
+    datasets:[
+      {label:'収入',data:moInc,borderColor:'rgba(52,211,153,.9)',backgroundColor:'rgba(52,211,153,.1)',fill:false,tension:.3,pointRadius:3},
+      {label:'支出',data:moExp,borderColor:'rgba(248,113,113,.9)',backgroundColor:'rgba(248,113,113,.1)',fill:false,tension:.3,pointRadius:3},
+      {label:'利益',data:moProf,borderColor:'rgba(124,106,247,.9)',backgroundColor:'rgba(124,106,247,.15)',fill:true,tension:.3,pointRadius:3},
+    ]
+  },options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#94a3b8',font:{size:11}}}},scales:{x:{ticks:{color:'#94a3b8',maxRotation:45,autoSkip:true,maxTicksLimit:18},grid:{color:'rgba(45,50,80,.5)'}},y:moYScale}}});
+}
+
+function renderYearlyHistory(){
+  const el=document.getElementById('sim-yearly-history');
+  const data=buildHistYearData();
+  if(!data.length){el.innerHTML='<tr><td colspan="9"><div class="empty-state">施術記録がありません</div></td></tr>';return;}
+  el.innerHTML=data.map(d=>{
+    const margin=d.income>0?Math.round(d.profit/d.income*100):0;
+    const pColor=d.profit>=0?'var(--success)':'var(--danger)';
+    return`<tr>
+      <td><strong>${d.yr}年</strong></td>
+      <td>${d.cnt}件</td>
+      <td><span class="badge badge-green">${yen(d.income)}</span></td>
+      <td>${yen(Math.round(d.nc))}</td>
+      <td>${yen(Math.round(d.lc))}</td>
+      <td>${yen(Math.round(d.fc))}</td>
+      <td>${yen(Math.round(d.sc))}</td>
+      <td style="color:${pColor};font-weight:700">${yen(Math.round(d.profit))}</td>
+      <td><span class="badge ${margin>=0?'badge-green':'badge-red'}">${margin}%</span></td>
+    </tr>`;
+  }).join('');
+  // refresh active chart if visible
+  if(currentHistView==='year')renderHistYearChart();
+  if(currentHistView==='month')renderHistMonthChart();
+}
+
+// ══ RENDER ALL ══
+function renderAll(){
+  renderPatients();renderNeedles();renderPurchases();renderLocations();
+  renderFixedCosts();renderSemiCosts();renderVisits();renderDashboard();
+  renderSimRefCard();renderYearlyHistory();runBacktest();
+}
+
+// ══ INIT ══
+document.getElementById('dash-month').value=thisMonth();
+document.getElementById('visits-month').value=thisMonth();
+document.getElementById('visit-date').value=today();
+document.getElementById('purch-date').value=today();
+refreshLocationSel();addNeedleRow();renderAll();
+</script>
+<!-- PWA Install Banner -->
+<div id="pwa-install-banner" style="display:none;position:fixed;bottom:0;left:0;right:0;background:linear-gradient(135deg,#21253a,#1a1d26);border-top:1px solid var(--border);padding:14px max(20px,env(safe-area-inset-left));padding-bottom:max(14px,env(safe-area-inset-bottom));z-index:300;animation:fadeIn .3s ease">
+  <div style="display:flex;align-items:center;gap:12px;max-width:600px;margin:0 auto">
+    <div style="font-size:32px">📱</div>
+    <div style="flex:1">
+      <div style="font-size:13px;font-weight:700;color:var(--text)">ホーム画面に追加</div>
+      <div style="font-size:11px;color:var(--text2);margin-top:2px">Safari の <strong>共有ボタン ⬆</strong> → <strong>「ホーム画面に追加」</strong> でアプリとして使えます</div>
+    </div>
+    <button onclick="document.getElementById('pwa-install-banner').style.display='none';localStorage.setItem('pwa-dismiss','1')" style="background:none;border:1px solid var(--border);color:var(--text2);border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer">✕</button>
+  </div>
+</div>
+<script>
+// Service Worker Registration
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('./sw.js').catch(()=>{});
+}
+// Show iOS install banner (only in Safari, not standalone)
+const isIOS=/iPad|iPhone|iPod/.test(navigator.userAgent);
+const isStandalone=window.navigator.standalone===true;
+if(isIOS && !isStandalone && !localStorage.getItem('pwa-dismiss')){
+  setTimeout(()=>{document.getElementById('pwa-install-banner').style.display='block';},2000);
+}
+</script>
+</body>
+</html>
