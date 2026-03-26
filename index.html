@@ -15,16 +15,17 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
 :root{--bg:#0f1117;--bg2:#1a1d26;--bg3:#21253a;--border:#2d3250;--accent:#7c6af7;--accent2:#5eead4;--accent3:#f472b6;--text:#e2e8f0;--text2:#94a3b8;--text3:#64748b;--success:#34d399;--warn:#fbbf24;--danger:#f87171;--r:14px;--sh:0 4px 24px rgba(0,0,0,.4)}
+[data-theme="light"]{--bg:#f4f6fb;--bg2:#ffffff;--bg3:#e8ecf4;--border:#d0d5e0;--text:#1a1d2e;--text2:#4a5068;--text3:#7a8098;--success:#16a36a;--warn:#d99700;--danger:#dc3545;--sh:0 4px 24px rgba(0,0,0,.08)}
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom);-webkit-tap-highlight-color:transparent;-webkit-text-size-adjust:100%}
-header{background:linear-gradient(135deg,#1a1d26,#21253a);border-bottom:1px solid var(--border);padding:0 max(16px,env(safe-area-inset-left));padding-right:max(16px,env(safe-area-inset-right));display:flex;align-items:center;gap:12px;height:56px;position:sticky;top:0;z-index:100;box-shadow:var(--sh)}
+header{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 max(16px,env(safe-area-inset-left));padding-right:max(16px,env(safe-area-inset-right));display:flex;align-items:center;gap:12px;height:56px;position:sticky;top:0;z-index:100;box-shadow:var(--sh)}
 .logo{font-size:18px;font-weight:700;background:linear-gradient(90deg,var(--accent),var(--accent2));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;white-space:nowrap}
 .hamburger{background:none;border:1px solid var(--border);color:var(--text);width:40px;height:40px;border-radius:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:22px;margin-left:auto;transition:all .2s;flex-shrink:0}
 .hamburger:hover{background:var(--bg3);border-color:var(--accent)}
 .hamburger:active{transform:scale(.92)}
 .drawer-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:150;opacity:0;transition:opacity .25s ease}
 .drawer-overlay.open{display:block;opacity:1}
-.drawer{position:fixed;top:0;right:-280px;width:260px;max-width:75vw;height:100%;background:linear-gradient(180deg,#1a1d26,#151720);border-left:1px solid var(--border);z-index:160;transition:right .3s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column;box-shadow:-4px 0 30px rgba(0,0,0,.5);padding-top:env(safe-area-inset-top)}
+.drawer{position:fixed;top:0;right:-280px;width:260px;max-width:75vw;height:100%;background:var(--bg2);border-left:1px solid var(--border);z-index:160;transition:right .3s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column;box-shadow:-4px 0 30px rgba(0,0,0,.5);padding-top:env(safe-area-inset-top)}
 .drawer.open{right:0}
 .drawer-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border)}
 .drawer-title{font-size:14px;font-weight:700;color:var(--text2)}
@@ -60,6 +61,7 @@ label{font-size:12px;color:var(--text2)}
 input,select,textarea{background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:7px 11px;font-size:13px;font-family:inherit;transition:border-color .2s;width:100%}
 input:focus,select:focus{outline:none;border-color:var(--accent)}
 select option{background:var(--bg3)}
+[data-theme="light"] input,[data-theme="light"] select,[data-theme="light"] textarea{background:var(--bg2);border-color:var(--border)}
 .btn{padding:8px 16px;border-radius:8px;border:none;cursor:pointer;font-size:13px;font-family:inherit;font-weight:500;transition:all .2s;white-space:nowrap}
 .btn-primary{background:var(--accent);color:#fff}.btn-primary:hover{background:#6a58e6;transform:translateY(-1px)}
 .btn-danger{background:transparent;border:1px solid var(--danger);color:var(--danger);padding:4px 9px;font-size:12px}
@@ -107,6 +109,19 @@ tr:hover td{background:rgba(124,106,247,.05)}
 .hist-view-btn{background:transparent;border:1px solid var(--border);color:var(--text2)}
 .hist-view-btn:hover{border-color:var(--accent);color:var(--accent)}
 .hist-view-btn.active{background:var(--accent);color:#fff;border-color:var(--accent);font-weight:500}
+.sim-period-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:14px}
+.sim-period-grid label{display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;background:var(--bg3);padding:10px 12px;border-radius:10px;border:1px solid var(--border);transition:all .2s}
+.sim-period-grid label:hover{border-color:var(--accent)}
+.sim-period-grid input[type=radio]:checked+span{color:var(--accent);font-weight:500}
+@media(max-width:400px){.sim-period-grid{grid-template-columns:1fr}}
+.theme-toggle{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;margin:0 10px;border-radius:10px;background:var(--bg3);border:1px solid var(--border);cursor:pointer;transition:all .2s;margin-top:auto;margin-bottom:16px}
+.theme-toggle:hover{border-color:var(--accent)}
+.theme-toggle-label{font-size:13px;color:var(--text2);display:flex;align-items:center;gap:8px}
+.theme-switch{width:44px;height:24px;border-radius:12px;background:var(--border);position:relative;transition:background .25s}
+.theme-switch::after{content:'';position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:transform .25s;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+[data-theme="light"] .theme-switch{background:var(--accent)}
+[data-theme="light"] .theme-switch::after{transform:translateX(20px)}
+.card-title{font-size:14px;font-weight:700;color:var(--text);margin-bottom:14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 </style>
 </head>
 <body>
@@ -128,6 +143,10 @@ tr:hover td{background:rgba(124,106,247,.05)}
     <button class="tab-btn" data-tab="simulator"><span class="tab-icon">🔮</span>利益予測</button>
     <button class="tab-btn" data-tab="settings"><span class="tab-icon">⚙️</span>設定</button>
   </nav>
+  <div class="theme-toggle" id="theme-toggle">
+    <span class="theme-toggle-label">🌙 ダーク / ☀️ ライト</span>
+    <div class="theme-switch" id="theme-switch"></div>
+  </div>
 </div>
 <main>
 
@@ -281,11 +300,11 @@ tr:hover td{background:rgba(124,106,247,.05)}
   <!-- 参照期間 & 外れ値除外 -->
   <div class="card" id="sim-ref-card">
     <div class="card-title">📂 実績参照期間</div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
-      <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:13px"><input type="radio" name="sim-period" value="3" id="sp3"> 過去3か月</label>
-      <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:13px"><input type="radio" name="sim-period" value="6" id="sp6" checked> 過去6か月</label>
-      <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:13px"><input type="radio" name="sim-period" value="12" id="sp12"> 過去12か月</label>
-      <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:13px"><input type="radio" name="sim-period" value="0" id="sp0"> 全期間（最大12か月）</label>
+    <div class="sim-period-grid">
+      <label><input type="radio" name="sim-period" value="3" id="sp3"><span>過去3か月</span></label>
+      <label><input type="radio" name="sim-period" value="6" id="sp6" checked><span>過去6か月</span></label>
+      <label><input type="radio" name="sim-period" value="12" id="sp12"><span>過去12か月</span></label>
+      <label><input type="radio" name="sim-period" value="0" id="sp0"><span>全期間（最大12か月）</span></label>
     </div>
     <div id="sim-actual-summary" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:14px"></div>
     <!-- 外れ値月 -->
@@ -438,6 +457,17 @@ tr:hover td{background:rgba(124,106,247,.05)}
   </div>
 </div>
 <script>
+// ══ THEME ══
+(function(){
+  const saved=localStorage.getItem('acm_theme');
+  if(saved)document.documentElement.setAttribute('data-theme',saved);
+})();
+document.getElementById('theme-toggle').addEventListener('click',()=>{
+  const cur=document.documentElement.getAttribute('data-theme');
+  const next=cur==='light'?'dark':'light';
+  if(next==='dark'){document.documentElement.removeAttribute('data-theme');localStorage.setItem('acm_theme','dark');}
+  else{document.documentElement.setAttribute('data-theme','light');localStorage.setItem('acm_theme','light');}
+});
 // ══ STORE ══
 const KEYS={needles:'acm_ndl',fixedCosts:'acm_fix',semiCosts:'acm_semi',patients:'acm_pat',visits:'acm_vis',purchases:'acm_pur',locations:'acm_loc'};
 function load(k){try{return JSON.parse(localStorage.getItem(k))||[];}catch{return[];}}

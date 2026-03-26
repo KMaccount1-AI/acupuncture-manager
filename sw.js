@@ -1,4 +1,4 @@
-const CACHE_NAME = 'acm-v2';
+const CACHE_NAME = 'acm-v3';
 const ASSETS = [
   './',
   './index.html',
