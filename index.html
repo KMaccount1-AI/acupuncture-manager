@@ -59,6 +59,7 @@ main{flex:1;padding:20px;padding-left:max(20px,env(safe-area-inset-left));paddin
 .form-group{display:flex;flex-direction:column;gap:5px;flex:1;min-width:120px}
 label{font-size:12px;color:var(--text2)}
 input,select,textarea{background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:7px 11px;font-size:13px;font-family:inherit;transition:border-color .2s;width:100%}
+input[type=radio],input[type=checkbox]{width:auto;margin:0;flex-shrink:0}
 input:focus,select:focus{outline:none;border-color:var(--accent)}
 select option{background:var(--bg3)}
 [data-theme="light"] input,[data-theme="light"] select,[data-theme="light"] textarea{background:var(--bg2);border-color:var(--border)}
@@ -430,14 +431,21 @@ tr:hover td{background:rgba(124,106,247,.05)}
   <div class="card">
     <div class="card-title">📱 アプリ情報</div>
     <div style="font-size:13px;color:var(--text2);line-height:2">
-      バージョン: <span class="badge badge-purple" id="app-version">v1.2.0</span><br>
+      バージョン: <span class="badge badge-purple" id="app-version">v1.2.1</span><br>
       共有URL: <code style="background:var(--bg3);padding:2px 6px;border-radius:4px;font-size:11px;user-select:all">https://kmaccount1-ai.github.io/acupuncture-manager/</code>
       <button class="btn btn-ghost btn-sm" style="margin-left:6px" onclick="navigator.clipboard.writeText('https://kmaccount1-ai.github.io/acupuncture-manager/');this.textContent='✓ コピー済';setTimeout(()=>this.textContent='コピー',1500)">コピー</button><br>
       データ保存先: localStorage（このデバイスのブラウザ内）
     </div>
-    <div style="margin-top:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-      <button class="btn btn-primary" id="btn-check-update">🔄 アップデートを確認</button>
-      <span id="update-status" style="font-size:12px;color:var(--text3)"></span>
+    <div style="margin-top:14px;display:flex;flex-direction:column;gap:12px">
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <button class="btn btn-primary" id="btn-check-update">🔄 アップデートを確認</button>
+        <span id="update-status" style="font-size:12px;color:var(--text3)"></span>
+      </div>
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--text2)">
+        <input type="checkbox" id="auto-update-toggle" style="width:auto;margin:0">
+        新バージョンがある時に自動で更新する
+      </label>
+      <div style="font-size:11px;color:var(--text3)">❱ OFFの場合、更新が見つかると通知され、「更新する」ボタンで適用できます</div>
     </div>
   </div>
   <div class="card">
@@ -1285,6 +1293,11 @@ document.getElementById('btn-clear-all').addEventListener('click',()=>{
   </div>
 </div>
 <script>
+// Auto-update setting
+const autoUpdateEl=document.getElementById('auto-update-toggle');
+autoUpdateEl.checked=localStorage.getItem('acm_auto_update')!=='false';// default ON
+autoUpdateEl.addEventListener('change',()=>{localStorage.setItem('acm_auto_update',autoUpdateEl.checked);});
+
 // Service Worker Registration with update detection
 let swReg=null;
 if('serviceWorker' in navigator){
@@ -1296,9 +1309,15 @@ if('serviceWorker' in navigator){
       const newWorker=reg.installing;
       newWorker.addEventListener('statechange',()=>{
         if(newWorker.state==='installed' && navigator.serviceWorker.controller){
-          document.getElementById('pwa-update-banner').style.display='block';
           const us=document.getElementById('update-status');
-          if(us)us.innerHTML='<span style="color:var(--success)">✅ 新しいバージョンが見つかりました！ページを再読み込みしてください。</span>';
+          if(autoUpdateEl.checked){
+            // Auto-update: apply immediately
+            newWorker.postMessage('skipWaiting');
+          } else {
+            // Manual: show banner and let user decide
+            document.getElementById('pwa-update-banner').style.display='block';
+            if(us)us.innerHTML='<span style="color:var(--success)">✅ 新しいバージョンがあります。上部の「更新する」ボタンで適用できます。</span>';
+          }
         }
       });
     });
@@ -1316,8 +1335,6 @@ document.getElementById('btn-check-update').addEventListener('click',async()=>{
   try{
     if(!swReg){statusEl.innerHTML='<span style="color:var(--text3)">Service Worker未登録（ブラウザから直接開いている場合は利用できません）</span>';return;}
     await swReg.update();
-    // If updatefound fires, the listener above will handle it
-    // If no update found, show current status after a short delay
     setTimeout(()=>{
       if(!document.getElementById('pwa-update-banner').style.display||document.getElementById('pwa-update-banner').style.display==='none'){
         statusEl.innerHTML='<span style="color:var(--success)">✅ 最新バージョンです</span>';
