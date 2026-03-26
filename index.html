@@ -179,7 +179,7 @@ tr:hover td{background:rgba(124,106,247,.05)}
 <div class="tab-panel" id="panel-visits">
   <div class="section-title"><span>📋</span>施術記録</div>
   <div class="card">
-    <div class="card-title">施術記録を追加</div>
+    <div class="card-title" id="visit-form-title">施術記録を追加</div>
     <div class="form-row">
       <div class="form-group"><label>患者（名前を入力 or 選択）</label><input type="text" id="visit-patient" list="visit-patient-datalist" placeholder="田中太郎" autocomplete="off"><datalist id="visit-patient-datalist"></datalist></div>
       <div class="form-group"><label>日付</label><input type="date" id="visit-date"></div>
@@ -200,7 +200,10 @@ tr:hover td{background:rgba(124,106,247,.05)}
     <div class="form-row" style="margin-top:10px">
       <div class="form-group"><label>メモ</label><input type="text" id="visit-note" placeholder="施術内容など"></div>
     </div>
-    <button class="btn btn-primary" id="save-visit">記録を保存</button>
+    <div style="display:flex;gap:10px;align-items:center">
+      <button class="btn btn-primary" id="save-visit">記録を保存</button>
+      <button class="btn btn-ghost" id="cancel-edit-visit" style="display:none">編集をキャンセル</button>
+    </div>
   </div>
   <div class="card">
     <div class="card-title">施術履歴</div>
@@ -427,6 +430,17 @@ tr:hover td{background:rgba(124,106,247,.05)}
       <label class="btn btn-ghost" style="cursor:pointer">📤 データをインポート<input type="file" id="file-import" accept=".json" style="display:none"></label>
     </div>
     <div id="backup-status" style="font-size:12px;color:var(--text3)"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">📌 一時保存（スナップショット）</div>
+    <div style="font-size:12px;color:var(--text2);margin-bottom:14px">
+      現在のデータのスナップショットを保持します。最大過去3回分まで保持できます。
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px">
+      <button class="btn btn-primary" id="btn-snapshot">💾 一時保存を実行</button>
+      <span id="snapshot-status" style="font-size:12px;color:var(--text3)"></span>
+    </div>
+    <div id="snapshot-list" style="display:flex;flex-direction:column;gap:8px"></div>
   </div>
   <div class="card">
     <div class="card-title">📱 アプリ情報</div>
@@ -698,14 +712,46 @@ function delSemi(id){S.semiCosts=S.semiCosts.filter(x=>x.id!==id);persist('semiC
 
 // ══ VISITS ══
 let needleRows=[];
-function addNeedleRow(){
+let editingVisitId=null;
+function addNeedleRow(needleId,qty){
   const rowId=uid();needleRows.push(rowId);
   const div=document.createElement('div');div.className='needle-usage-row';div.id='nrow-'+rowId;
-  div.innerHTML=`<select class="needle-select" id="nsel-${rowId}"><option value="">-- 針を選択 --</option>${S.needles.map(n=>`<option value="${n.id}">${n.name}(${yen(n.unitPrice)}/本)</option>`).join('')}</select><input type="number" id="nqty-${rowId}" placeholder="本数" min="1" value="1" style="width:80px"><button class="btn btn-danger" onclick="removeNeedleRow('${rowId}')">×</button>`;
+  div.innerHTML=`<select class="needle-select" id="nsel-${rowId}"><option value="">-- 針を選択 --</option>${S.needles.map(n=>`<option value="${n.id}"${n.id===needleId?' selected':''}>${n.name}(${yen(n.unitPrice)}/本)</option>`).join('')}</select><input type="number" id="nqty-${rowId}" placeholder="本数" min="1" value="${qty||1}" style="width:80px"><button class="btn btn-danger" onclick="removeNeedleRow('${rowId}')">×</button>`;
   document.getElementById('needle-usage-list').appendChild(div);
 }
 function removeNeedleRow(r){needleRows=needleRows.filter(x=>x!==r);const el=document.getElementById('nrow-'+r);if(el)el.remove();}
-document.getElementById('add-needle-row').addEventListener('click',addNeedleRow);
+document.getElementById('add-needle-row').addEventListener('click',()=>addNeedleRow());
+function editVisit(id){
+  const v=S.visits.find(x=>x.id===id);if(!v)return;
+  editingVisitId=id;
+  document.getElementById('visit-form-title').textContent='施術記録を編集';
+  document.getElementById('save-visit').textContent='更新を保存';
+  document.getElementById('cancel-edit-visit').style.display='';
+  document.getElementById('visit-patient').value=getPatientName(v.patientId);
+  document.getElementById('visit-date').value=v.date;
+  document.getElementById('visit-payment').value=v.paymentReceived||'';
+  document.getElementById('visit-location').value=v.locationId||'';
+  document.getElementById('visit-location-other').value=v.locationOther||'';
+  toggleLocOther();
+  document.getElementById('visit-note').value=v.note||'';
+  // Fill needle rows
+  document.getElementById('needle-usage-list').innerHTML='';needleRows=[];
+  (v.needlesUsed||[]).forEach(u=>addNeedleRow(u.needleTypeId,u.qty));
+  // Scroll to form
+  document.getElementById('visit-form-title').scrollIntoView({behavior:'smooth',block:'start'});
+}
+function cancelEditVisit(){
+  editingVisitId=null;
+  document.getElementById('visit-form-title').textContent='施術記録を追加';
+  document.getElementById('save-visit').textContent='記録を保存';
+  document.getElementById('cancel-edit-visit').style.display='none';
+  document.getElementById('visit-patient').value='';document.getElementById('visit-payment').value='';
+  document.getElementById('visit-note').value='';document.getElementById('visit-location').value='';
+  document.getElementById('visit-location-other').value='';
+  document.getElementById('loc-other-wrap').classList.remove('show');
+  document.getElementById('needle-usage-list').innerHTML='';needleRows=[];addNeedleRow();
+}
+document.getElementById('cancel-edit-visit').addEventListener('click',cancelEditVisit);
 document.getElementById('save-visit').addEventListener('click',()=>{
   const patientInput=document.getElementById('visit-patient').value.trim();
   const date=document.getElementById('visit-date').value;
@@ -716,24 +762,30 @@ document.getElementById('save-visit').addEventListener('click',()=>{
   if(!patientInput)return alert('患者名を入力してください');
   if(!date)return alert('日付を入力してください');
   if(locationId==='other'&&!locationOther)return alert('場所（自由入力）を記入してください');
-  // Resolve patient: find by name or auto-register
   let patient=S.patients.find(p=>p.name===patientInput);
-  if(!patient){
-    patient={id:uid(),name:patientInput,note:''};
-    S.patients.push(patient);
-    persist('patients');
-  }
+  if(!patient){patient={id:uid(),name:patientInput,note:''};S.patients.push(patient);persist('patients');}
   const patientId=patient.id;
   const needlesUsed=needleRows.map(r=>({needleTypeId:document.getElementById('nsel-'+r)?.value||'',qty:parseInt(document.getElementById('nqty-'+r)?.value)||0})).filter(u=>u.needleTypeId&&u.qty>0);
-  needlesUsed.forEach(u=>{const n=S.needles.find(x=>x.id===u.needleTypeId);if(n)n.stock=Math.max(0,n.stock-u.qty);});
-  persist('needles');
-  S.visits.push({id:uid(),patientId,date,needlesUsed,paymentReceived:payment,locationId,locationOther,note});
-  persist('visits');
-  document.getElementById('visit-patient').value='';document.getElementById('visit-payment').value='';document.getElementById('visit-note').value='';
-  document.getElementById('visit-location').value='';document.getElementById('visit-location-other').value='';
-  document.getElementById('loc-other-wrap').classList.remove('show');
-  document.getElementById('needle-usage-list').innerHTML='';needleRows=[];
-  renderAll();alert('施術記録を保存しました');
+  if(editingVisitId){
+    // Edit mode: restore old needles, then deduct new
+    const old=S.visits.find(x=>x.id===editingVisitId);
+    if(old)(old.needlesUsed||[]).forEach(u=>{const n=S.needles.find(x=>x.id===u.needleTypeId);if(n)n.stock+=u.qty;});
+    needlesUsed.forEach(u=>{const n=S.needles.find(x=>x.id===u.needleTypeId);if(n)n.stock=Math.max(0,n.stock-u.qty);});
+    persist('needles');
+    const idx=S.visits.findIndex(x=>x.id===editingVisitId);
+    if(idx>=0)S.visits[idx]={...S.visits[idx],patientId,date,needlesUsed,paymentReceived:payment,locationId,locationOther,note};
+    persist('visits');cancelEditVisit();renderAll();alert('施術記録を更新しました');
+  } else {
+    needlesUsed.forEach(u=>{const n=S.needles.find(x=>x.id===u.needleTypeId);if(n)n.stock=Math.max(0,n.stock-u.qty);});
+    persist('needles');
+    S.visits.push({id:uid(),patientId,date,needlesUsed,paymentReceived:payment,locationId,locationOther,note});
+    persist('visits');
+    document.getElementById('visit-patient').value='';document.getElementById('visit-payment').value='';document.getElementById('visit-note').value='';
+    document.getElementById('visit-location').value='';document.getElementById('visit-location-other').value='';
+    document.getElementById('loc-other-wrap').classList.remove('show');
+    document.getElementById('needle-usage-list').innerHTML='';needleRows=[];
+    renderAll();alert('施術記録を保存しました');
+  }
 });
 document.getElementById('visits-month').addEventListener('change',renderVisits);
 function renderVisits(){
@@ -743,7 +795,7 @@ function renderVisits(){
   if(!visits.length){el.innerHTML='<tr><td colspan="9"><div class="empty-state">施術記録がありません</div></td></tr>';return;}
   el.innerHTML=[...visits].sort((a,b)=>b.date.localeCompare(a.date)).map(v=>{
     const nc=calcNeedleCost(v);const nt=(v.needlesUsed||[]).reduce((s,u)=>s+u.qty,0);const lf=getLocationFee(v);
-    return`<tr><td>${v.date}</td><td>${getPatientName(v.patientId)}</td><td>${getLocationName(v)}</td><td>${nt}本</td><td><span class="badge badge-red">${yen(nc)}</span></td><td><span class="badge badge-yellow">${yen(lf)}</span></td><td><span class="badge badge-green">${yen(v.paymentReceived)}</span></td><td style="font-size:12px;color:var(--text2)">${v.note||'—'}</td><td><button class="btn btn-danger" onclick="openDel(()=>delVisit('${v.id}'))">削除</button></td></tr>`;
+    return`<tr><td>${v.date}</td><td>${getPatientName(v.patientId)}</td><td>${getLocationName(v)}</td><td>${nt}本</td><td><span class="badge badge-red">${yen(nc)}</span></td><td><span class="badge badge-yellow">${yen(lf)}</span></td><td><span class="badge badge-green">${yen(v.paymentReceived)}</span></td><td style="font-size:12px;color:var(--text2)">${v.note||'—'}</td><td style="white-space:nowrap"><button class="btn btn-ghost btn-sm" onclick="editVisit('${v.id}')">編集</button> <button class="btn btn-danger" onclick="openDel(()=>delVisit('${v.id}'))">削除</button></td></tr>`;
   }).join('');
 }
 function delVisit(id){
@@ -1227,11 +1279,72 @@ function renderYearlyHistory(){
   if(currentHistView==='month')renderHistMonthChart();
 }
 
+// ══ SNAPSHOTS ══
+function getSnapshots(){try{return JSON.parse(localStorage.getItem('acm_snapshots'))||[];}catch{return[];}}
+function saveSnapshots(arr){localStorage.setItem('acm_snapshots',JSON.stringify(arr));}
+function getCurrentDataJson(){
+  const data={};
+  Object.entries(KEYS).forEach(([k,v])=>{data[k]=load(v);});
+  return JSON.stringify(data);
+}
+function renderSnapshots(){
+  const el=document.getElementById('snapshot-list');if(!el)return;
+  const snaps=getSnapshots();
+  if(!snaps.length){el.innerHTML='<div style="font-size:12px;color:var(--text3)">保存されたスナップショットはありません</div>';return;}
+  el.innerHTML=snaps.map((s,i)=>{
+    const d=new Date(s.timestamp);
+    const label=`${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+    const visits=s.data?.visits?.length||0;const patients=s.data?.patients?.length||0;
+    return`<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:10px;flex-wrap:wrap">
+      <div style="flex:1;min-width:120px">
+        <div style="font-size:13px;font-weight:500;color:var(--text)">#${snaps.length-i} — ${label}</div>
+        <div style="font-size:11px;color:var(--text3)">施術${visits}件 / 患者${patients}名</div>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="restoreSnapshot(${i})">復元</button>
+      <button class="btn btn-danger" onclick="openDel(()=>deleteSnapshot(${i}))">削除</button>
+    </div>`;
+  }).join('');
+}
+document.getElementById('btn-snapshot').addEventListener('click',()=>{
+  const statusEl=document.getElementById('snapshot-status');
+  const currentJson=getCurrentDataJson();
+  const snaps=getSnapshots();
+  // Check if data changed from most recent snapshot
+  if(snaps.length>0){
+    const lastJson=JSON.stringify(snaps[0].data);
+    if(currentJson===lastJson){
+      if(!confirm('前回の一時保存からデータに変化がありません。\nそれでも保存しますか？'))return;
+    }
+  }
+  const newSnap={timestamp:new Date().toISOString(),data:JSON.parse(currentJson)};
+  snaps.unshift(newSnap);
+  if(snaps.length>3)snaps.length=3;
+  saveSnapshots(snaps);
+  renderSnapshots();
+  statusEl.innerHTML='<span style="color:var(--success)">✅ 保存しました</span>';
+  setTimeout(()=>{statusEl.textContent='';},3000);
+});
+function restoreSnapshot(idx){
+  const snaps=getSnapshots();
+  if(!snaps[idx])return;
+  const d=new Date(snaps[idx].timestamp);
+  const label=`${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+  if(!confirm(`スナップショット（${label}）からデータを復元します。\n現在のデータは上書きされます。よろしいですか？`))return;
+  const data=snaps[idx].data;
+  Object.entries(KEYS).forEach(([k,v])=>{if(data[k])save(v,data[k]);});
+  S={needles:load(KEYS.needles),fixedCosts:load(KEYS.fixedCosts),semiCosts:load(KEYS.semiCosts),patients:load(KEYS.patients),visits:load(KEYS.visits),purchases:load(KEYS.purchases),locations:load(KEYS.locations)};
+  renderAll();
+  document.getElementById('snapshot-status').innerHTML='<span style="color:var(--success)">✅ 復元しました</span>';
+}
+function deleteSnapshot(idx){
+  const snaps=getSnapshots();snaps.splice(idx,1);saveSnapshots(snaps);renderSnapshots();
+}
+
 // ══ RENDER ALL ══
 function renderAll(){
   renderPatients();renderNeedles();renderPurchases();renderLocations();
   renderFixedCosts();renderSemiCosts();renderVisits();renderDashboard();
-  renderSimRefCard();renderYearlyHistory();runBacktest();
+  renderSimRefCard();renderYearlyHistory();runBacktest();renderSnapshots();
 }
 
 // ══ INIT ══
