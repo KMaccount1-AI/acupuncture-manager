@@ -17,12 +17,25 @@
 :root{--bg:#0f1117;--bg2:#1a1d26;--bg3:#21253a;--border:#2d3250;--accent:#7c6af7;--accent2:#5eead4;--accent3:#f472b6;--text:#e2e8f0;--text2:#94a3b8;--text3:#64748b;--success:#34d399;--warn:#fbbf24;--danger:#f87171;--r:14px;--sh:0 4px 24px rgba(0,0,0,.4)}
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom);-webkit-tap-highlight-color:transparent;-webkit-text-size-adjust:100%}
-header{background:linear-gradient(135deg,#1a1d26,#21253a);border-bottom:1px solid var(--border);padding:0 max(16px,env(safe-area-inset-left));padding-right:max(16px,env(safe-area-inset-right));display:flex;align-items:center;gap:12px;height:56px;position:sticky;top:0;z-index:100;box-shadow:var(--sh);flex-wrap:wrap}
+header{background:linear-gradient(135deg,#1a1d26,#21253a);border-bottom:1px solid var(--border);padding:0 max(16px,env(safe-area-inset-left));padding-right:max(16px,env(safe-area-inset-right));display:flex;align-items:center;gap:12px;height:56px;position:sticky;top:0;z-index:100;box-shadow:var(--sh)}
 .logo{font-size:18px;font-weight:700;background:linear-gradient(90deg,var(--accent),var(--accent2));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;white-space:nowrap}
-nav{display:flex;gap:3px;margin-left:auto;flex-wrap:wrap;padding:4px 0}
-.tab-btn{background:none;border:none;color:var(--text2);padding:6px 12px;border-radius:8px;cursor:pointer;font-size:13px;font-family:inherit;transition:all .2s;white-space:nowrap}
+.hamburger{background:none;border:1px solid var(--border);color:var(--text);width:40px;height:40px;border-radius:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:22px;margin-left:auto;transition:all .2s;flex-shrink:0}
+.hamburger:hover{background:var(--bg3);border-color:var(--accent)}
+.hamburger:active{transform:scale(.92)}
+.drawer-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:150;opacity:0;transition:opacity .25s ease}
+.drawer-overlay.open{display:block;opacity:1}
+.drawer{position:fixed;top:0;right:-280px;width:260px;max-width:75vw;height:100%;background:linear-gradient(180deg,#1a1d26,#151720);border-left:1px solid var(--border);z-index:160;transition:right .3s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column;box-shadow:-4px 0 30px rgba(0,0,0,.5);padding-top:env(safe-area-inset-top)}
+.drawer.open{right:0}
+.drawer-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border)}
+.drawer-title{font-size:14px;font-weight:700;color:var(--text2)}
+.drawer-close{background:none;border:none;color:var(--text2);font-size:22px;cursor:pointer;padding:4px 8px;border-radius:6px;transition:all .2s}
+.drawer-close:hover{color:var(--text);background:var(--bg3)}
+.drawer nav{display:flex;flex-direction:column;gap:2px;padding:12px 10px;flex:1;overflow-y:auto}
+.tab-btn{background:none;border:none;color:var(--text2);padding:12px 16px;border-radius:10px;cursor:pointer;font-size:14px;font-family:inherit;transition:all .2s;white-space:nowrap;text-align:left;display:flex;align-items:center;gap:10px}
 .tab-btn:hover{background:var(--bg3);color:var(--text)}
-.tab-btn.active{background:var(--accent);color:#fff;font-weight:500}
+.tab-btn:active{transform:scale(.97)}
+.tab-btn.active{background:linear-gradient(135deg,var(--accent),rgba(124,106,247,.7));color:#fff;font-weight:500;box-shadow:0 2px 12px rgba(124,106,247,.3)}
+.tab-btn .tab-icon{font-size:18px;width:24px;text-align:center;flex-shrink:0}
 main{flex:1;padding:20px;padding-left:max(20px,env(safe-area-inset-left));padding-right:max(20px,env(safe-area-inset-right));max-width:1280px;width:100%;margin:0 auto}
 .tab-panel{display:none}.tab-panel.active{display:block;animation:fadeIn .25s ease}
 @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
@@ -99,15 +112,23 @@ tr:hover td{background:rgba(124,106,247,.05)}
 <body>
 <header>
   <div class="logo">🩺 鍼治療院 経営管理</div>
-  <nav>
-    <button class="tab-btn active" data-tab="dashboard">ダッシュボード</button>
-    <button class="tab-btn" data-tab="visits">施術記録</button>
-    <button class="tab-btn" data-tab="patients">患者管理</button>
-    <button class="tab-btn" data-tab="costs">針・費用管理</button>
-    <button class="tab-btn" data-tab="simulator">利益予測</button>
-    <button class="tab-btn" data-tab="settings">⚙️</button>
-  </nav>
+  <button class="hamburger" id="hamburger-btn" aria-label="メニューを開く">☰</button>
 </header>
+<div class="drawer-overlay" id="drawer-overlay"></div>
+<div class="drawer" id="drawer">
+  <div class="drawer-header">
+    <span class="drawer-title">メニュー</span>
+    <button class="drawer-close" id="drawer-close">✕</button>
+  </div>
+  <nav>
+    <button class="tab-btn active" data-tab="dashboard"><span class="tab-icon">📊</span>ダッシュボード</button>
+    <button class="tab-btn" data-tab="visits"><span class="tab-icon">📋</span>施術記録</button>
+    <button class="tab-btn" data-tab="patients"><span class="tab-icon">👤</span>患者管理</button>
+    <button class="tab-btn" data-tab="costs"><span class="tab-icon">💰</span>針・費用管理</button>
+    <button class="tab-btn" data-tab="simulator"><span class="tab-icon">🔮</span>利益予測</button>
+    <button class="tab-btn" data-tab="settings"><span class="tab-icon">⚙️</span>設定</button>
+  </nav>
+</div>
 <main>
 
 <!-- ══ DASHBOARD ══ -->
@@ -445,6 +466,14 @@ function calcNeedleCost(v){return(v.needlesUsed||[]).reduce((s,u)=>{const n=S.ne
 function calcSemi(v){const t=(v.needlesUsed||[]).reduce((s,u)=>s+u.qty,0);return S.semiCosts.reduce((s,c)=>s+(c.perPatient||0)+(c.perNeedle||0)*t,0);}
 function calcFixed(cnt){return S.fixedCosts.reduce((s,c)=>{if(c.billingType==='monthly')return s+c.amount;if(c.billingType==='perVisit')return s+c.amount*cnt;return s;},0);}
 
+// ══ DRAWER ══
+const drawerEl=document.getElementById('drawer');
+const drawerOverlay=document.getElementById('drawer-overlay');
+function openDrawer(){drawerEl.classList.add('open');drawerOverlay.classList.add('open');}
+function closeDrawer(){drawerEl.classList.remove('open');drawerOverlay.classList.remove('open');}
+document.getElementById('hamburger-btn').addEventListener('click',openDrawer);
+document.getElementById('drawer-close').addEventListener('click',closeDrawer);
+drawerOverlay.addEventListener('click',closeDrawer);
 // ══ TABS ══
 document.querySelectorAll('.tab-btn').forEach(btn=>{
   btn.addEventListener('click',()=>{
@@ -452,6 +481,7 @@ document.querySelectorAll('.tab-btn').forEach(btn=>{
     document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
     btn.classList.add('active');
     document.getElementById('panel-'+btn.dataset.tab).classList.add('active');
+    closeDrawer();
     renderAll();
   });
 });
