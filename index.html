@@ -431,10 +431,14 @@ tr:hover td{background:rgba(124,106,247,.05)}
   <div class="card">
     <div class="card-title">📱 アプリ情報</div>
     <div style="font-size:13px;color:var(--text2);line-height:2">
-      バージョン: <span class="badge badge-purple" id="app-version">v1.1.0</span><br>
+      バージョン: <span class="badge badge-purple" id="app-version">v1.2.0</span><br>
       共有URL: <code style="background:var(--bg3);padding:2px 6px;border-radius:4px;font-size:11px;user-select:all">https://kmaccount1-ai.github.io/acupuncture-manager/</code>
       <button class="btn btn-ghost btn-sm" style="margin-left:6px" onclick="navigator.clipboard.writeText('https://kmaccount1-ai.github.io/acupuncture-manager/');this.textContent='✓ コピー済';setTimeout(()=>this.textContent='コピー',1500)">コピー</button><br>
       データ保存先: localStorage（このデバイスのブラウザ内）
+    </div>
+    <div style="margin-top:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+      <button class="btn btn-primary" id="btn-check-update">🔄 アップデートを確認</button>
+      <span id="update-status" style="font-size:12px;color:var(--text3)"></span>
     </div>
   </div>
   <div class="card">
@@ -1283,8 +1287,10 @@ document.getElementById('btn-clear-all').addEventListener('click',()=>{
 </div>
 <script>
 // Service Worker Registration with update detection
+let swReg=null;
 if('serviceWorker' in navigator){
   navigator.serviceWorker.register('./sw.js').then(reg=>{
+    swReg=reg;
     // Check for updates periodically (every 30 minutes)
     setInterval(()=>reg.update(),30*60*1000);
     reg.addEventListener('updatefound',()=>{
@@ -1292,6 +1298,8 @@ if('serviceWorker' in navigator){
       newWorker.addEventListener('statechange',()=>{
         if(newWorker.state==='installed' && navigator.serviceWorker.controller){
           document.getElementById('pwa-update-banner').style.display='block';
+          const us=document.getElementById('update-status');
+          if(us)us.innerHTML='<span style="color:var(--success)">✅ 新しいバージョンが見つかりました！ページを再読み込みしてください。</span>';
         }
       });
     });
@@ -1302,6 +1310,24 @@ if('serviceWorker' in navigator){
     if(!refreshing){refreshing=true;location.reload();}
   });
 }
+// Manual update check button
+document.getElementById('btn-check-update').addEventListener('click',async()=>{
+  const statusEl=document.getElementById('update-status');
+  statusEl.innerHTML='<span style="color:var(--accent)">🔄 確認中...</span>';
+  try{
+    if(!swReg){statusEl.innerHTML='<span style="color:var(--text3)">Service Worker未登録（ブラウザから直接開いている場合は利用できません）</span>';return;}
+    await swReg.update();
+    // If updatefound fires, the listener above will handle it
+    // If no update found, show current status after a short delay
+    setTimeout(()=>{
+      if(!document.getElementById('pwa-update-banner').style.display||document.getElementById('pwa-update-banner').style.display==='none'){
+        statusEl.innerHTML='<span style="color:var(--success)">✅ 最新バージョンです</span>';
+      }
+    },2000);
+  }catch(e){
+    statusEl.innerHTML='<span style="color:var(--danger)">⚠️ 確認に失敗しました（オフラインの可能性があります）</span>';
+  }
+});
 // Show iOS install banner (only in Safari, not standalone)
 const isIOS=/iPad|iPhone|iPod/.test(navigator.userAgent);
 const isStandalone=window.navigator.standalone===true;
