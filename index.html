@@ -181,7 +181,7 @@ tr:hover td{background:rgba(124,106,247,.05)}
   <div class="card">
     <div class="card-title">施術記録を追加</div>
     <div class="form-row">
-      <div class="form-group"><label>患者</label><select id="visit-patient"></select></div>
+      <div class="form-group"><label>患者（名前を入力 or 選択）</label><input type="text" id="visit-patient" list="visit-patient-datalist" placeholder="田中太郎" autocomplete="off"><datalist id="visit-patient-datalist"></datalist></div>
       <div class="form-group"><label>日付</label><input type="date" id="visit-date"></div>
       <div class="form-group"><label>支払金額（円）</label><input type="number" id="visit-payment" placeholder="3000" min="0"></div>
     </div>
@@ -550,9 +550,9 @@ function renderPatients(){
     const tot=vs.reduce((s,v)=>s+(v.paymentReceived||0),0);
     return`<tr><td style="color:var(--text3)">${i+1}</td><td><strong>${p.name}</strong></td><td>${vs.length}回</td><td><span class="badge badge-green">${yen(tot)}</span></td><td style="color:var(--text2);font-size:12px">${p.note||'—'}</td><td><button class="btn btn-danger" onclick="openDel(()=>delPatient('${p.id}'))">削除</button></td></tr>`;
   }).join('');
-  const sel=document.getElementById('visit-patient');const cur=sel.value;
-  sel.innerHTML=S.patients.map(p=>`<option value="${p.id}">${p.name}</option>`).join('');
-  if(cur)sel.value=cur;
+  // Update datalist for visit form
+  const dl=document.getElementById('visit-patient-datalist');
+  if(dl)dl.innerHTML=S.patients.map(p=>`<option value="${p.name}">`).join('');
 }
 function delPatient(id){S.patients=S.patients.filter(x=>x.id!==id);S.visits=S.visits.filter(x=>x.patientId!==id);persist('patients');persist('visits');}
 
@@ -707,21 +707,29 @@ function addNeedleRow(){
 function removeNeedleRow(r){needleRows=needleRows.filter(x=>x!==r);const el=document.getElementById('nrow-'+r);if(el)el.remove();}
 document.getElementById('add-needle-row').addEventListener('click',addNeedleRow);
 document.getElementById('save-visit').addEventListener('click',()=>{
-  const patientId=document.getElementById('visit-patient').value;
+  const patientInput=document.getElementById('visit-patient').value.trim();
   const date=document.getElementById('visit-date').value;
   const payment=parseFloat(document.getElementById('visit-payment').value)||0;
   const locationId=document.getElementById('visit-location').value||'';
   const locationOther=document.getElementById('visit-location-other').value.trim();
   const note=document.getElementById('visit-note').value.trim();
-  if(!patientId)return alert('患者を選択してください');
+  if(!patientInput)return alert('患者名を入力してください');
   if(!date)return alert('日付を入力してください');
   if(locationId==='other'&&!locationOther)return alert('場所（自由入力）を記入してください');
+  // Resolve patient: find by name or auto-register
+  let patient=S.patients.find(p=>p.name===patientInput);
+  if(!patient){
+    patient={id:uid(),name:patientInput,note:''};
+    S.patients.push(patient);
+    persist('patients');
+  }
+  const patientId=patient.id;
   const needlesUsed=needleRows.map(r=>({needleTypeId:document.getElementById('nsel-'+r)?.value||'',qty:parseInt(document.getElementById('nqty-'+r)?.value)||0})).filter(u=>u.needleTypeId&&u.qty>0);
   needlesUsed.forEach(u=>{const n=S.needles.find(x=>x.id===u.needleTypeId);if(n)n.stock=Math.max(0,n.stock-u.qty);});
   persist('needles');
   S.visits.push({id:uid(),patientId,date,needlesUsed,paymentReceived:payment,locationId,locationOther,note});
   persist('visits');
-  document.getElementById('visit-payment').value='';document.getElementById('visit-note').value='';
+  document.getElementById('visit-patient').value='';document.getElementById('visit-payment').value='';document.getElementById('visit-note').value='';
   document.getElementById('visit-location').value='';document.getElementById('visit-location-other').value='';
   document.getElementById('loc-other-wrap').classList.remove('show');
   document.getElementById('needle-usage-list').innerHTML='';needleRows=[];
