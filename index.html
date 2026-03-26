@@ -109,11 +109,10 @@ tr:hover td{background:rgba(124,106,247,.05)}
 .hist-view-btn{background:transparent;border:1px solid var(--border);color:var(--text2)}
 .hist-view-btn:hover{border-color:var(--accent);color:var(--accent)}
 .hist-view-btn.active{background:var(--accent);color:#fff;border-color:var(--accent);font-weight:500}
-.sim-period-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:14px}
-.sim-period-grid label{display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;background:var(--bg3);padding:10px 12px;border-radius:10px;border:1px solid var(--border);transition:all .2s}
+.sim-period-grid{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+.sim-period-grid label{display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;background:var(--bg3);padding:10px 14px;border-radius:10px;border:1px solid var(--border);transition:all .2s}
 .sim-period-grid label:hover{border-color:var(--accent)}
 .sim-period-grid input[type=radio]:checked+span{color:var(--accent);font-weight:500}
-@media(max-width:400px){.sim-period-grid{grid-template-columns:1fr}}
 .theme-toggle{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;margin:0 10px;border-radius:10px;background:var(--bg3);border:1px solid var(--border);cursor:pointer;transition:all .2s;margin-top:auto;margin-bottom:16px}
 .theme-toggle:hover{border-color:var(--accent)}
 .theme-toggle-label{font-size:13px;color:var(--text2);display:flex;align-items:center;gap:8px}
